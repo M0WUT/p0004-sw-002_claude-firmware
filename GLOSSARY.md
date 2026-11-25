@@ -52,6 +52,18 @@ _Avoid_: recording, capture, data logging
 A Volume is Locked while the firmware may write to it, for example while Logging to it. A Locked Volume is read-only to the Connected PC. An unlocked Volume belongs to the Connected PC, and the firmware does not write to it.
 _Avoid_: busy, in use, mounted, read-only
 
+**Soft Key**:
+One of the four buttons below the LCD, whose meaning on the current screen is shown by the Soft Key Legend.
+_Avoid_: hard key, arrow key, up/down/left/right button
+
+**Soft Key Legend**:
+The on-screen labels just above the Soft Keys, showing what each one does. It is always visible where input is required, and fades after 10 s without a press on information screens.
+_Avoid_: button bar, hint bar, menu bar
+
+**Factory Reset**:
+Returning every Service to its default Config Parameters by rebuilding the config storage from scratch.
+_Avoid_: wipe, format, reset to defaults (that is one Service only)
+
 **Buzzer**:
 The passive sound output on the LCD Board.
 _Avoid_: speaker
