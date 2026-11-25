@@ -32,6 +32,26 @@ _Avoid_: coprocessor, slave MCU
 The instrument-specific hardware fitted in the GTE enclosure's custom space. Each Instrument has its own design.
 _Avoid_: daughterboard, custom hardware, add-on board
 
+**Connected PC**:
+The computer plugged into the LCD Board's USB device port.
+_Avoid_: host, USB host, computer
+
+**USB stick**:
+A mass-storage device plugged into the LCD Board's USB-A port.
+_Avoid_: flash drive, thumb drive, USB drive, pen drive
+
+**Volume**:
+A storage medium the firmware can log to: the SD card or the USB stick. Each Volume appears to the Connected PC as one drive.
+_Avoid_: disk, drive, LUN, partition
+
+**Logging**:
+The state, set by the Application Service, in which the Instrument records data to one or more Volumes (its log destinations).
+_Avoid_: recording, capture, data logging
+
+**Locked**:
+A Volume is Locked while the firmware may write to it, for example while Logging to it. A Locked Volume is read-only to the Connected PC. An unlocked Volume belongs to the Connected PC, and the firmware does not write to it.
+_Avoid_: busy, in use, mounted, read-only
+
 **Buzzer**:
 The passive sound output on the LCD Board.
 _Avoid_: speaker
@@ -43,16 +63,16 @@ The firmware common to every Instrument, versioned on its own and included by ea
 _Avoid_: generic firmware, base firmware, framework
 
 **Instrument Firmware**:
-The firmware for one Instrument: GTE Core plus that Instrument's own Services and its Instrument Board definitions.
+The firmware for one Instrument: GTE Core plus that Instrument's Application Service, any other Services it adds, and its Instrument Board definitions.
 _Avoid_: application, project
 
 **Service**:
 A firmware module responsible for exactly one element of the system. A Service may or may not own hardware, and has Config Parameters and Status Values.
 _Avoid_: module, task, driver
 
-**Instrument Service**:
-The one Service per Instrument that handles that Instrument's specific behaviour, including registering the sensors on its Instrument Board.
-_Avoid_: application service, custom service
+**Application Service**:
+The one Service per Instrument that handles that Instrument's own behaviour, including registering the sensors on its Instrument Board.
+_Avoid_: Instrument Service, custom service, instrument-specific service
 
 **Helper**:
 Shared infrastructure used by every Service (logging, time, EEPROM access, the Service registry). A Helper is not a Service and has no Config Parameters.
