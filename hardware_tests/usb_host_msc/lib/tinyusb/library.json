@@ -1,0 +1,21 @@
+{
+  "name": "tinyusb-local",
+  "version": "0.21.0",
+  "description": "TinyUSB 0.21.0 (hathach/tinyusb tag 0.21.0, dae3f9a) - core, classes and the dwc2 port only",
+  "build": {
+    "srcDir": "src",
+    "includeDir": "src",
+    "srcFilter": [
+      "+<*.c>",
+      "+<common/>",
+      "+<device/>",
+      "+<host/>",
+      "+<class/>",
+      "+<portable/synopsys/dwc2/>"
+    ],
+    "libLDFMode": "deep+"
+  },
+  "dependencies": {
+    "stm32duino/STM32duino FreeRTOS": "10.3.2"
+  }
+}

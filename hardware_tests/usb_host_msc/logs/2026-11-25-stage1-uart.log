@@ -1,0 +1,24 @@
+[      50] === USB spike stage 1 (host MSC on OTG_FS) ===
+[      55] RCC_CR=3F03C025 CFGR=0000001B PLLCKSELR=00F0F052 D2CCIP2R=00101009 SYSCLK=480000000
+[      63] USBSEL=1 (1=PLL1Q, 2=PLL3Q, 3=HSI48)
+[      87] Host VBUS enabled (PD14 high); fault pin PD15=1 (1 = no fault)
+[      93] Starting scheduler
+[      96] host_task: tusb_init(rhport 0, HOST)
+[     106] FAULT: monitor started, PD15=1 (1 = no fault)
+[    5111] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   10117] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   15123] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   20129] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   25135] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   30141] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   35147] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   40153] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   45159] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   50165] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   55171] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   60177] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   65183] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   70189] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   75195] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   80201] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744
+[   85207] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=432744

@@ -1,0 +1,7 @@
+.pio/
+**/.pio/
+.claude/worktrees/
+hardware_tests/.venv/
+__pycache__/
+.pytest_cache/
+hardware_tests/logs/

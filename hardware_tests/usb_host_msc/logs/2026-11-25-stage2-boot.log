@@ -1,0 +1,19 @@
+[      50] === USB spike stage 2 (host MSC on OTG_FS + device CDC/MSC on OTG_HS) ===
+[      57] RCC_CR=3F03C025 CFGR=0000001B PLLCKSELR=00F0F052 D2CCIP2R=00101009 SYSCLK=480000000
+[      65] USBSEL=1 (1=PLL1Q, 2=PLL3Q, 3=HSI48)
+[      90] Host VBUS enabled (PD14 high); fault pin PD15=1 (1 = no fault)
+[      96] Starting scheduler
+[      99] device_task: tusb_init(rhport 1, DEVICE)
+[     100] host_task: tusb_init(rhport 0, HOST)
+[     114] FAULT: monitor started, PD15=1 (1 = no fault)
+[     351] DEVICE: configured by the PC (mounted)
+[     374] DEVICE: CDC0 line state DTR=0 RTS=0
+[     458] HOST: MSC mounted addr=1, LUNs=1
+[     462] HOST: device mounted addr=1 VID=ABCD PID=1234
+[     519] MSC: inquiry 'General ' 'UDisk           ' rev '5.00'
+[     524] MSC: 983040 blocks x 512 bytes = 480 MiB
+[     530] MSC: sector 0 signature 55 AA (expect 55 AA), first bytes 00 00 00
+[    5119] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=413424
+[   10125] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=413424
+[   15131] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=413424
+[   20137] heartbeat: PD15=1 fault edges=0 asserts=0, free heap=413424

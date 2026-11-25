@@ -1,0 +1,93 @@
+             LCD: No entry
+[0m2026-11-25T00:17:35	[EEPROM]          	        ETHERNET: No entry
+[0m2026-11-25T00:17:35	[EEPROM]          	        USB_HOST: No entry
+[0m2026-11-25T00:17:35	[EEPROM]          	      USB_DEVICE: No entry
+[0m2026-11-25T00:17:35	[EEPROM]          	         SD_CARD: No entry
+[0m2026-11-25T00:17:35	[EEPROM]          	              UI: No entry
+[0m2026-11-25T00:17:35	[EEPROM]          	            SCPI: No entry
+[0m2026-11-25T00:17:35	[EEPROM]          	  HOME_ASSISTANT: No entry
+[0m2026-11-25T00:17:35	[EEPROM]          	     APPLICATION: No entry
+[0m2026-11-25T00:17:35	[EEPROM]          	         WEBPAGE: No entry
+[0m2026-11-25T00:17:36	[Ethernet]        Initialising...
+[0m[32m2026-11-25T00:17:36	[EEPROM]          ETHERNET requested config data load of 88 config data bytes (version 1)
+[0m[33m2026-11-25T00:17:36	[EEPROM]          No valid config data found for ETHERNET
+[0m2026-11-25T00:17:36	[Ethernet]        Creating default config
+[0m[32m2026-11-25T00:17:36	[EEPROM]          ETHERNET requested config data write of 88 config data bytes (version 1)
+[0m[32m2026-11-25T00:17:36	[EEPROM]          Allocating space for new ETHERNET config (92 bytes)
+[0m2026-11-25T00:17:36	[EEPROM]          CAT Table:
+[0m2026-11-25T00:17:36	[EEPROM]          	             CAT: 0x0000 (0) - 31 bytes
+[0m2026-11-25T00:17:36	[EEPROM]          	            CORE: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	           POWER: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	         THERMAL: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	             LCD: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	        ETHERNET: 0x001F (31) - 92 bytes
+[0m2026-11-25T00:17:36	[EEPROM]          	        USB_HOST: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	      USB_DEVICE: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	         SD_CARD: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	              UI: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	            SCPI: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	  HOME_ASSISTANT: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	     APPLICATION: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	         WEBPAGE: No entry
+[0m[32m2026-11-25T00:17:36	[EEPROM]          ETHERNET requested config data load of 88 config data bytes (version 1)
+[0m2026-11-25T00:17:36	[Ethernet]        Config:
+[0m2026-11-25T00:17:36	[Ethernet]        	Use DHCP?: true
+[0m2026-11-25T00:17:36	[Ethernet]        	Hostname: gte-d7a79d
+[0m2026-11-25T00:17:36	[Ethernet]        	Static IP Address: 192.168.1.2
+[0m2026-11-25T00:17:36	[Ethernet]        	Subnet Mask (static IP only): 255.255.255.0
+[0m2026-11-25T00:17:36	[Ethernet]        	DNS Server (static IP only): 192.168.1.1
+[0m2026-11-25T00:17:36	[Ethernet]        	Try to sync with NTP?: true
+[0m2026-11-25T00:17:36	[Ethernet]        	NTP Server: europe.pool.ntp.org
+[0m2026-11-25T00:17:36	[Ethernet]        	NTP Update Interval (minutes): 1440
+[0m[32m2026-11-25T00:17:36	[Ethernet]        Ethernet PHY controller configured as SPI2
+[0m[32m2026-11-25T00:17:36	[Ethernet]        W5500 detected
+[0m2026-11-25T00:17:36	[Home Assistant]  Initialising...
+[0m[32m2026-11-25T00:17:36	[EEPROM]          HOME_ASSISTANT requested config data load of 101 config data bytes (version 1)
+[0m[33m2026-11-25T00:17:36	[EEPROM]          No valid config data found for HOME_ASSISTANT
+[0m2026-11-25T00:17:36	[Home Assistant]  Creating default config
+[0m[32m2026-11-25T00:17:36	[EEPROM]          HOME_ASSISTANT requested config data write of 101 config data bytes (version 1)
+[0m[32m2026-11-25T00:17:36	[EEPROM]          Allocating space for new HOME_ASSISTANT config (105 bytes)
+[0m2026-11-25T00:17:36	[EEPROM]          CAT Table:
+[0m2026-11-25T00:17:36	[EEPROM]          	             CAT: 0x0000 (0) - 31 bytes
+[0m2026-11-25T00:17:36	[EEPROM]          	            CORE: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	           POWER: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	         THERMAL: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	             LCD: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	        ETHERNET: 0x001F (31) - 92 bytes
+[0m2026-11-25T00:17:36	[EEPROM]          	        USB_HOST: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	      USB_DEVICE: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	         SD_CARD: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	              UI: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	            SCPI: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	  HOME_ASSISTANT: 0x007B (123) - 105 bytes
+[0m2026-11-25T00:17:36	[EEPROM]          	     APPLICATION: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	         WEBPAGE: No entry
+[0m[32m2026-11-25T00:17:36	[EEPROM]          HOME_ASSISTANT requested config data load of 101 config data bytes (version 1)
+[0m2026-11-25T00:17:36	[Home Assistant]  Config:
+[0m2026-11-25T00:17:36	[Home Assistant]  	Home Assistant Connection enabled?: true
+[0m2026-11-25T00:17:36	[Home Assistant]  	MQTT Broker IP Address: 10.59.9.8
+[0m2026-11-25T00:17:36	[Home Assistant]  	MQTT Broker Username (optional): mosquitto
+[0m2026-11-25T00:17:36	[Home Assistant]  	MQTT Broker Password (optional): mosquitto
+[0m2026-11-25T00:17:36	[Webpage]         Initialising...
+[0m[32m2026-11-25T00:17:36	[EEPROM]          WEBPAGE requested config data load of 4 config data bytes (version 1)
+[0m[33m2026-11-25T00:17:36	[EEPROM]          No valid config data found for WEBPAGE
+[0m2026-11-25T00:17:36	[Webpage]         Creating default config
+[0m[32m2026-11-25T00:17:36	[EEPROM]          WEBPAGE requested config data write of 4 config data bytes (version 1)
+[0m[32m2026-11-25T00:17:36	[EEPROM]          Allocating space for new WEBPAGE config (8 bytes)
+[0m2026-11-25T00:17:36	[EEPROM]          CAT Table:
+[0m2026-11-25T00:17:36	[EEPROM]          	             CAT: 0x0000 (0) - 31 bytes
+[0m2026-11-25T00:17:36	[EEPROM]          	            CORE: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	           POWER: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	         THERMAL: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	             LCD: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	        ETHERNET: 0x001F (31) - 92 bytes
+[0m2026-11-25T00:17:36	[EEPROM]          	        USB_HOST: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	      USB_DEVICE: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	         SD_CARD: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	              UI: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	            SCPI: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	  HOME_ASSISTANT: 0x007B (123) - 105 bytes
+[0m2026-11-25T00:17:36	[EEPROM]          	     APPLICATION: No entry
+[0m2026-11-25T00:17:36	[EEPROM]          	         WEBPAGE: 0x00E4 (228) - 8 bytes
+[0m[32m2026-11-25T00:17:36	[EEPROM]          WEBPAGE requested config data load m
+ █

@@ -1,0 +1,17 @@
+# RAM log read over SWD (hardware_tests/tools/swd_ram_log.py), USB host spike stage 1, 2026-11-25
+# 1151 bytes logged since boot
+[      50] === USB spike stage 1 (host MSC on OTG_FS) ===
+[      55] RCC_CR=3F03C025 CFGR=0000001B PLLCKSELR=00F0F052 D2CCIP2R=00101009 SYSCLK=480000000
+[      63] USBSEL=1 (1=PLL1Q, 2=PLL3Q, 3=HSI48)
+[      87] Host VBUS enabled (PD14 high); fault pin PD15=0 (1 = no fault)
+[      93] Starting scheduler
+[      96] host_task: tusb_init(rhport 0, HOST)
+[     106] FAULT: monitor started, PD15=0 (1 = no fault)
+[     116] FAULT: PD15 0 -> 0 (FAULT ASSERTED), edges=1 asserts=1 last edge at 77 ms
+[    5111] heartbeat: PD15=0 fault edges=1 asserts=1, free heap=432744
+...  (unchanged every 5 s up to 45 s; the stick never enumerated)
+
+# Afterwards, over SWD: GPIOD BSRR <- 1<<30 (PD14 low, VBUS off), CPU left halted.
+# GPIOD ODR=0x0000, IDR=0x8060 -> PD15 = 1 (fault cleared once VBUS is disabled).
+# Host power switch U7 = TPS2553DBVR-1: IN 5V via F4 (1 A fuse), EN = PD14, ~FAULT = PD15 (R51 10k pull-up),
+# ILIM R50 = 47k (~550 mA by the datasheet formula, unverified), OUT 5V_VBUS with C40/C41/C47 = 3 x 22 uF.
