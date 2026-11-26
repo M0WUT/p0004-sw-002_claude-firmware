@@ -36,8 +36,12 @@
  *   [MSB]         HID | MSC | CDC          [LSB]
  */
 #define PID_MAP(itf, n)  ((CFG_TUD_##itf) ? (1 << (n)) : 0)
+#ifdef GTE_USB_PID
+#define USB_PID           GTE_USB_PID // per-build override so VM USB filters can match
+#else
 #define USB_PID           (0x4000 | PID_MAP(CDC, 0) | PID_MAP(MSC, 1) | PID_MAP(HID, 2) | \
                            PID_MAP(MIDI, 3) | PID_MAP(VENDOR, 4) )
+#endif
 
 #define USB_VID   0xCafe
 #define USB_BCD   0x0200

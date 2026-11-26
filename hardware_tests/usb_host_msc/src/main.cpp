@@ -125,8 +125,15 @@ void tud_cdc_rx_cb(uint8_t itf)
   tud_cdc_n_write_flush(itf);
 }
 
+#if GTE_LUN0_SD
+void sd_lun_begin();
+extern volatile uint32_t sdReads, sdWrites, sdErrors, sdBytesRead, sdBytesWritten;
+#endif
 static void device_task(void *)
 {
+#if GTE_LUN0_SD
+  sd_lun_begin(); // before the D+ pull-up connects, so drive 0 is ready when the PC first asks
+#endif
   logf("device_task: tusb_init(rhport %d, DEVICE)", BOARD_TUD_RHPORT);
   tusb_rhport_init_t init = {.role = TUSB_ROLE_DEVICE, .speed = TUSB_SPEED_AUTO};
   if (!tusb_init(BOARD_TUD_RHPORT, &init))
@@ -320,6 +327,10 @@ static void heartbeat_task(void *)
   for (;;)
   {
     vTaskDelay(pdMS_TO_TICKS(5000));
+#if GTE_LUN0_SD
+    logf("sdlun: reads=%lu (%lu B) writes=%lu (%lu B) errors=%lu", (unsigned long)sdReads, (unsigned long)sdBytesRead,
+         (unsigned long)sdWrites, (unsigned long)sdBytesWritten, (unsigned long)sdErrors);
+#endif
 #if SPIKE_PASSTHROUGH
     logf("passthrough: reads=%lu bytes=%lu errors=%lu busy=%lu", (unsigned long)ptReads, (unsigned long)ptBytes, (unsigned long)ptErrors, (unsigned long)ptBusy);
 #endif
@@ -331,7 +342,7 @@ void setup()
 {
   dbg.begin(115200);
   delay(50);
-  logf("=== USB spike stage %d (host MSC on OTG_FS%s%s) ===", SPIKE_PASSTHROUGH ? 3 : (SPIKE_DEVICE ? 2 : 1), SPIKE_DEVICE ? " + device CDC/MSC on OTG_HS" : "", SPIKE_PASSTHROUGH ? " + stick pass-through LUN 1" : "");
+  logf("=== USB spike stage %d (host MSC on OTG_FS%s%s) ===", SPIKE_PASSTHROUGH ? 3 : (SPIKE_DEVICE ? 2 : 1), SPIKE_DEVICE ? " + device CDC/MSC on OTG_HS" : "", SPIKE_PASSTHROUGH ? (GTE_LUN0_SD ? " + SD card LUN 0 + stick pass-through LUN 1" : " + stick pass-through LUN 1") : "");
   logf("RCC_CR=%08lX CFGR=%08lX PLLCKSELR=%08lX D2CCIP2R=%08lX SYSCLK=%lu",
        (unsigned long)RCC->CR, (unsigned long)RCC->CFGR, (unsigned long)RCC->PLLCKSELR, (unsigned long)RCC->D2CCIP2R,
        (unsigned long)HAL_RCC_GetSysClockFreq());

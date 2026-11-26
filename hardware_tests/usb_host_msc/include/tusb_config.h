@@ -32,6 +32,9 @@
 #ifndef SPIKE_PASSTHROUGH
 #define SPIKE_PASSTHROUGH 0
 #endif
+#ifndef GTE_LUN0_SD
+#define GTE_LUN0_SD 0
+#endif
 #define CFG_TUD_ENABLED        SPIKE_DEVICE
 #define CFG_TUD_MAX_SPEED      OPT_MODE_FULL_SPEED
 #define CFG_TUD_ENDPOINT0_SIZE 64
