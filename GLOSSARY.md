@@ -122,6 +122,14 @@ _Avoid_: probe, channel, measurement point
 The latched state, entered when any temperature Sensor passes its threshold, in which every fan runs at full speed and the Application Service shuts down its heat-generating hardware.
 _Avoid_: thermal fault, overheat, thermal shutdown
 
+**Warning**:
+A problem the device can carry on through, shown to the user until they acknowledge it, or until the code that raised it clears it.
+_Avoid_: alert, notification, alarm
+
+**Error Code**:
+The stable number identifying a Warning or Fatal Error, together with its default message: 100 × (ServiceId + 1) plus a number unique within that Service, with the lowest range reserved for problems outside any Service.
+_Avoid_: fault code, error id, warning id
+
 **Status Value**:
 A read-only, live value a Service reports about itself, such as whether something is running.
 _Avoid_: status field, telemetry, reading
