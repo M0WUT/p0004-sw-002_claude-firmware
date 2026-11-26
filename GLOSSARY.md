@@ -114,6 +114,14 @@ _Avoid_: hidden field, private setting
 A failure, raised by any Service, after which the device stops all normal operation and shows the failure until it is restarted.
 _Avoid_: crash, panic, hard fault
 
+**Sensor**:
+One measured quantity (temperature, voltage, current, power or fan speed) from one physical source, owned by the Service that handles that quantity.
+_Avoid_: probe, channel, measurement point
+
+**Overtemperature**:
+The latched state, entered when any temperature Sensor passes its threshold, in which every fan runs at full speed and the Application Service shuts down its heat-generating hardware.
+_Avoid_: thermal fault, overheat, thermal shutdown
+
 **Status Value**:
 A read-only, live value a Service reports about itself, such as whether something is running.
 _Avoid_: status field, telemetry, reading
