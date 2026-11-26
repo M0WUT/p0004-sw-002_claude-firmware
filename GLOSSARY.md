@@ -17,7 +17,7 @@ The front-panel board (P0004-PCB-001) with the main MCU, TFT, buttons, buzzer, E
 _Avoid_: main board, generic board, MCU board
 
 **IO Board**:
-The board (P0004-PCB-002) that the LCD Board connects to. It handles power-source muxing and also has the status LEDs, the fan controller and the IO Expander.
+The board (P0004-PCB-002) that the LCD Board connects to and draws power from. It handles power-source muxing and has the status LEDs, the fans and the IO Expander.
 _Avoid_: baseboard, power board
 
 **IO Board model**:
@@ -25,8 +25,12 @@ One of a small number of IO Board variants, identified by a model number stored 
 _Avoid_: IO Board revision, IO Board type
 
 **IO Expander**:
-The STM32F030 on the IO Board, which presents IO Board functions to the LCD Board over I2C.
+The STM32F030 on the IO Board, which presents IO Board functions (power status, LEDs, GPIO, fans) to the LCD Board over I2C.
 _Avoid_: coprocessor, slave MCU
+
+**Board Identity**:
+The write-protected record on an IO Board or Instrument Board, written in factory test, that states its type, revision and serial number.
+_Avoid_: board ID, board info, ID EEPROM
 
 **Instrument Board**:
 The instrument-specific hardware fitted in the GTE enclosure's custom space. Each Instrument has its own design.
@@ -89,6 +93,10 @@ _Avoid_: Instrument Service, custom service, instrument-specific service
 **Helper**:
 Shared infrastructure used by every Service (logging, time, EEPROM access, the Service registry). A Helper is not a Service and has no Config Parameters.
 _Avoid_: utility, manager
+
+**Board Helper**:
+The Helper that reads the Board Identities at startup and tells Services which IO Board and Instrument Board are fitted.
+_Avoid_: IO Board Service, board manager
 
 **Config Parameter**:
 A user-editable setting belonging to a Service. It is saved to the LCD Board EEPROM and loaded at startup.
