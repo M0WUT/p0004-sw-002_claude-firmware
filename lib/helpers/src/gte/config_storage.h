@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Config storage in the 24AA256UID, in sw-001's format (docs/eeprom.md, issue
 // #12):
 //   "LID", entry count n, n x 16-bit LE block addresses indexed by ServiceId

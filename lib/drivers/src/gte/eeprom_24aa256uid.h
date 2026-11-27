@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Microchip 24AA256UID on I2C4 at 0x50: 32 KiB, 64-byte pages, factory ID and
 // EUI-48 (MAC) at the top of the array. Writes are split at page boundaries and
 // each page waits for the chip's write cycle by acknowledge polling. (sw-001's

@@ -301,7 +301,13 @@ def test_cpp_style():
     assert "lib/services/src/gte/gte.cc" in files
     venv_bin = Path(sys.executable).parent
     lint = subprocess.run(
-        [str(venv_bin / "cpplint"), "--quiet", *files],
+        [
+            str(venv_bin / "cpplint"),
+            "--quiet",
+            # No per-file copyright headers: the project is MIT (LICENSE)
+            "--filter=-legal/copyright",
+            *files,
+        ],
         cwd=REPO,
         capture_output=True,
         text=True,

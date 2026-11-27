@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 #include "gte/fatal.h"
 
 #include <Arduino.h>

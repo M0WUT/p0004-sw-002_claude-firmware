@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // IO Expander: the registers at the same address on every IO Board model.
 //
 // Every IO Board model has an IO Expander with this common block. Everything

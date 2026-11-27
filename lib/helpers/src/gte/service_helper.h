@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Registers Services, initialises them in order, then gives each its own
 // FreeRTOS task.
 #pragma once

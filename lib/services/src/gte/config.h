@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Config Parameters: declared by each Service in DeclareConfig(), each pointing
 // at the place in the Service's config struct where its value lives. Generic
 // code parses, range/step-checks, writes and saves them; the Service only adds

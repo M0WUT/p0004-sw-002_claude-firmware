@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 #include "gte/base_service.h"
 
 #include <STM32FreeRTOS.h>

@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 #include "gte/service_helper.h"
 
 #include <STM32FreeRTOS.h>

@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // CRC8 as sw-001's code computes it (RobTillaart CRC8(7, 0, 0x55)): polynomial
 // 0x07, initial value 0x00, no reflection, final XOR 0x55. sw-001's
 // docs/eeprom.md said XOR 0; the code (and this repo's docs/eeprom.md) use 0x55

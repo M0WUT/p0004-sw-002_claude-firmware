@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 #include "gte/time_helper.h"
 
 #include <Arduino.h>

@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Base class for an Instrument's Application Service.
 #pragma once
 #include "gte/base_service.h"

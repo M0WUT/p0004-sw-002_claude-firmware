@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Test Application for the hardware suite (never shipped). Two Services
 // exercise the Service framework and config storage; pytest picks a scenario by
 // writing kScenarioAddr over SWD while the core is held in reset (DTCM is

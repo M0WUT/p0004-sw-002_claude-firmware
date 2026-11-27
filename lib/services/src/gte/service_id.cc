@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 #include "gte/service_id.h"
 
 namespace gte {

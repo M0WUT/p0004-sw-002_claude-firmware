@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 #include "gte/logging_helper.h"
 
 #include <Arduino.h>

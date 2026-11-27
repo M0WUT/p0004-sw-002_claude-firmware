@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 #pragma once
 #include <cstdint>
 

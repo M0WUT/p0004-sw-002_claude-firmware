@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Fatal Errors (issues #9, #10, #19): the device stops normal operation for
 // good. The raising code suspends the scheduler and masks interrupts, then
 // loops forever: the error is printed on the debug UART at once and every 2 s

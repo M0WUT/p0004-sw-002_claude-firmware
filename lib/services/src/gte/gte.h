@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // GTE Core: owns startup. src/main.cpp's setup() calls gte::Start(), which
 // never returns.
 //

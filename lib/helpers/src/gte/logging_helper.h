@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // The debug UART log, the active Warnings, and the RGB LED's Warning
 // indication.
 //

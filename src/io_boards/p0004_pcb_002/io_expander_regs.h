@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // IO Expander register map for IO Board model P0004-PCB-002, protocol
 // version 1.
 //

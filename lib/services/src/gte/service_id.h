@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Service identities. The numbers are fixed forever: Error Codes (100 x (id +
 // 1) + n), config storage and SCPI all depend on them. Add new Services at the
 // end; Instruments add their own APPLICATION_x Entry (editing this enum per

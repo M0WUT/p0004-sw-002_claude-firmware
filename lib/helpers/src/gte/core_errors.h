@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Error Codes for the Helpers (1-99) and the CORE Service (101-199).
 #pragma once
 #include "gte/error_code.h"

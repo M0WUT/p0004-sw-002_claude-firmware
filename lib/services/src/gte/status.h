@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Status Values: typed, with a stable id, a unit and a display hint. The exact
 // value goes to SCPI and Home Assistant; the display text (e.g. "1.2 GiB") goes
 // to the web page and LCD.

@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // The independent watchdog (issue #37): 4 s timeout, fed by a supervisor task
 // only while every registered task has checked in within its deadline. Frozen
 // while a debugger halts the core. The fatal loop feeds it directly, so the

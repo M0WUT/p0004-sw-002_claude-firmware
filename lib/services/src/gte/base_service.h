@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // A Service (issue #9, execution model issue #10).
 //
 // Lifecycle: ServiceHelper calls Initialise() on every Service in registration

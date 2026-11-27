@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // The four Soft Keys under the LCD, numbered 1-4 left to right (issue #12).
 // Active low. pytest can simulate presses by writing kOverrideAddr over SWD:
 // (0x4B45 << 16) | mask, bit 0 = Soft Key 1. Until the CI rig presses the real

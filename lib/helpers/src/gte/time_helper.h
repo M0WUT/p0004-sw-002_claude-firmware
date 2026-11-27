@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Wall-clock time for log timestamps.
 //
 // There is no LSE crystal or backup battery, so the clock starts at

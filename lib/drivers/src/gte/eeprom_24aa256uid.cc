@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 #include "gte/eeprom_24aa256uid.h"
 
 #include <Arduino.h>

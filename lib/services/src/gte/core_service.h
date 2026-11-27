@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // The CORE Service. Its Log level also applies to the Helpers. Board reporting
 // (issue #45) and the boot-time EEPROM fatal/watchdog record (issue #43) are
 // added later.

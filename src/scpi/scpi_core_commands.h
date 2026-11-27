@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // SCPI commands provided by GTE Core.
 //
 // Each command is documented in a /** @scpi ... */ block, which is the only source for the

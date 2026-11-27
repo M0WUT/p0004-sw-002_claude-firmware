@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Error Codes: one number per problem, used for both Warnings and Fatal Errors.
 //
 // Code = 100 x (ServiceId + 1) + n, n = 0..99 within the Service. 0 = "No

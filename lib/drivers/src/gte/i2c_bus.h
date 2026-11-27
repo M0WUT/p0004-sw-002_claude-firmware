@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // An I2C bus with a mutex (issue #10: one mutex per shared resource, inside the
 // code that owns it) and devices on it. Every failed transfer is reported to
 // the caller; callers treat a failed read as a Fatal Error (issue #13). probe()

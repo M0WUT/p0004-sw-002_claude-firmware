@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 #include "gte/soft_keys.h"
 
 #include <Arduino.h>
