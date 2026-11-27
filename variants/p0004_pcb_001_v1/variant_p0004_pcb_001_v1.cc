@@ -1,4 +1,3 @@
-// Copyright 2026 M0WUT
 // Clock tree for the GTE LCD Board, P0004-PCB-001 v1.
 //
 // 25 MHz HSE crystal -> PLL1: /M5 = 5 MHz, xN192 = 960 MHz VCO (wide range),

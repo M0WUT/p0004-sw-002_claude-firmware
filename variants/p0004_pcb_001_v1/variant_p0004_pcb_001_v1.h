@@ -1,10 +1,9 @@
-// Copyright 2026 M0WUT
 // GTE LCD Board, P0004-PCB-001 v1: STM32H743VIT6 with a 25 MHz HSE crystal,
 // core at 480 MHz.
 //
-// Built on STM32duino's generic H743V variant (PeripheralPins.c, ldscript.ld,
-// variant_generic.*, copied unchanged); this header and
-// variant_p0004_pcb_001_v1.cpp hold everything board-specific. Pins come from
+// Built on STM32duino's generic H743V variant, used in place from the framework
+// package (scripts/framework_variant.py); this header and
+// variant_p0004_pcb_001_v1.cc hold everything board-specific. Pins come from
 // sw-001's include/pinout.h, which is the source of truth (it reflects rework
 // done after the schematic); pins it doesn't list come from the
 // research/lcd-board-pinout note.

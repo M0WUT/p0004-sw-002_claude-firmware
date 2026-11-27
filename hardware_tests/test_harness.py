@@ -256,12 +256,9 @@ def test_python_style():
     assert pyright.returncode == 0, f"pyright (standard):\n{pyright.stdout}"
 
 
-# Third-party C++ kept as delivered: STM32duino's generic variant files, the
-# FreeRTOS config copy (its name is fixed by the library) and vendored TinyUSB.
+# Third-party C++ kept as delivered: the FreeRTOS config copy (its name is fixed
+# by the library) and vendored TinyUSB.
 THIRD_PARTY_CPP = (
-    "variants/p0004_pcb_001_v1/variant_generic.",
-    "variants/p0004_pcb_001_v1/PeripheralPins",
-    "variants/p0004_pcb_001_v1/PinNamesVar",
     "include/STM32FreeRTOSConfig.h",
     "tinyusb",
     "bringup/",
