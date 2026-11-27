@@ -298,7 +298,7 @@ def test_cpp_style():
     """Our C++ follows Google style: clang-format (Google) and a clean cpplint.
     Anything inside an @scpi documentation block is exempt."""
     files = cpp_files()
-    assert "lib/gte_core/src/gte/gte.cc" in files
+    assert "lib/services/src/gte/gte.cc" in files
     venv_bin = Path(sys.executable).parent
     lint = subprocess.run(
         [str(venv_bin / "cpplint"), "--quiet", *files],
