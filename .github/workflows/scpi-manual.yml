@@ -1,0 +1,33 @@
+# Builds the SCPI manual from the /** @scpi */ comments and publishes it to GitHub Pages.
+# All logic lives in p0004-sw-003_scpi-manual-generator, cloned fresh each run.
+name: SCPI manual
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          git clone --depth 1 https://github.com/M0WUT/p0004-sw-003_scpi-manual-generator.git "$RUNNER_TEMP/scpi-gen"
+          pip install -r "$RUNNER_TEMP/scpi-gen/requirements.txt"
+          python3 "$RUNNER_TEMP/scpi-gen/generate_manual.py"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
