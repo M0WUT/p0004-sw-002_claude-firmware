@@ -6,3 +6,4 @@ __pycache__/
 .pytest_cache/
 hardware_tests/logs/
 build/
+bringup/logs/

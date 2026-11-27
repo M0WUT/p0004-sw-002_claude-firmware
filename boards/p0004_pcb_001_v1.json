@@ -1,0 +1,40 @@
+{
+  "build": {
+    "arduino": {
+      "variant_h": "variant_p0004_pcb_001_v1.h"
+    },
+    "core": "stm32",
+    "cpu": "cortex-m7",
+    "extra_flags": "-DSTM32H7 -DSTM32H7xx -DSTM32H743xx -DHSE_VALUE=25000000",
+    "f_cpu": "480000000L",
+    "framework_extra_flags": {
+      "arduino": "-DARDUINO_GENERIC_H743VITX"
+    },
+    "mcu": "stm32h743vit6",
+    "product_line": "STM32H743xx",
+    "variant": "p0004_pcb_001_v1"
+  },
+  "debug": {
+    "jlink_device": "STM32H743VI",
+    "openocd_target": "stm32h7x",
+    "svd_path": "STM32H743.svd"
+  },
+  "frameworks": [
+    "arduino",
+    "cmsis",
+    "stm32cube"
+  ],
+  "name": "GTE LCD Board P0004-PCB-001 v1 (STM32H743VIT6, 25 MHz HSE)",
+  "upload": {
+    "maximum_ram_size": 524288,
+    "maximum_size": 2097152,
+    "protocol": "stlink",
+    "protocols": [
+      "stlink",
+      "jlink",
+      "cmsis-dap"
+    ]
+  },
+  "url": "https://github.com/M0WUT/p0004-pcb-001_lcd-board",
+  "vendor": "M0WUT"
+}
