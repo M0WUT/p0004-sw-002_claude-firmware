@@ -43,7 +43,7 @@ def test_boot_line(flashed, uart):
 
 def test_clocks(booted):
     """The 25 MHz crystal drives PLL1: SYSCLK 480 MHz at VOS0, USB kernel clock 48 MHz from PLL1Q."""
-    m = booted.wait_for(r'^GTE clocks (.*)$', 2)
+    m = booted.wait_for(r'^GTE clocks (.*)\n', 2)  # \n: only a complete line
     kv = dict(p.split('=', 1) for p in m.group(1).split())
     assert kv['pllsrc'] == 'HSE', 'PLL is not running from the crystal'
     assert kv['hserdy'] == '1', 'HSE crystal not ready'
