@@ -49,12 +49,12 @@ A storage medium the firmware can log to: the SD card or the USB stick. Each Vol
 _Avoid_: disk, drive, LUN, partition
 
 **Logging**:
-The state, set by the Application Service, in which the Instrument records data to one or more Volumes (its log destinations).
+The state, set by the Application Service, in which the Instrument records data to one or more Volumes (its log destinations), none of which may have PC Access on.
 _Avoid_: recording, capture, data logging
 
-**Locked**:
-A Volume is Locked while the firmware may write to it, for example while Logging to it. A Locked Volume is read-only to the Connected PC. An unlocked Volume belongs to the Connected PC, and the firmware does not write to it.
-_Avoid_: busy, in use, mounted, read-only
+**PC Access**:
+The per-Volume setting that hands the Volume to the Connected PC. While it is off (the default after every power-up), only the firmware uses the Volume and the Connected PC sees no medium; while it is on, the Connected PC owns the Volume and the firmware does not write to it.
+_Avoid_: passthrough mode, USB mode, Locked, unlocked
 
 **Soft Key**:
 One of the four buttons below the LCD, whose meaning on the current screen is shown by the Soft Key Legend.
