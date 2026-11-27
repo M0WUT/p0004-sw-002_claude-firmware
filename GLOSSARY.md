@@ -17,16 +17,28 @@ The front-panel board (P0004-PCB-001) with the main MCU, TFT, buttons, buzzer, E
 _Avoid_: main board, generic board, MCU board
 
 **IO Board**:
-The board (P0004-PCB-002) that the LCD Board connects to and draws power from. It handles power-source muxing and has the status LEDs, the fans and the IO Expander.
+The board that the LCD Board connects to and draws power from (P0004-PCB-002 is the first IO Board model). It handles power-source muxing and has the Source LEDs, the fans and the IO Expander.
 _Avoid_: baseboard, power board
 
 **IO Board model**:
-One of a small number of IO Board variants, identified by a model number stored in an I2C EEPROM on the IO Board.
+One of a small number of IO Board designs, identified by a model number in its Board Identity. Each model has its own IO Expander register map and its own IO Expander firmware.
 _Avoid_: IO Board revision, IO Board type
 
 **IO Expander**:
-The STM32F030 on the IO Board, which presents IO Board functions (power status, LEDs, GPIO, fans) to the LCD Board over I2C.
-_Avoid_: coprocessor, slave MCU
+The microcontroller on an IO Board (an STM32F030 on P0004-PCB-002) that presents that board's fixed functions (power-source status, Source LEDs, fans) to the LCD Board over I2C. Every IO Board model has one with the same style of interface, but each model has its own register map. It offers no general-purpose IO: an Instrument that needs IO has it on its Instrument Board.
+_Avoid_: coprocessor, slave MCU, GPIO expander
+
+**Valid source**:
+A power source on the IO Board that is present and able to power GTE.
+_Avoid_: available source, present source
+
+**Selected source**:
+A Valid source that the IO Board is currently drawing power from.
+_Avoid_: active source, current source
+
+**Source LED**:
+The RGB LED for one power source on the IO Board, showing that source's input state. The IO Expander drives it by itself, so it works even when the LCD Board is unpowered; the Power Service can take it over.
+_Avoid_: power LED, status LED
 
 **Board Identity**:
 The write-protected record on an IO Board or Instrument Board, written in factory test, that states its type, revision and serial number.
