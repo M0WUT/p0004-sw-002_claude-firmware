@@ -60,9 +60,17 @@ _Avoid_: flash drive, thumb drive, USB drive, pen drive
 A storage medium the firmware can log to: the SD card or the USB stick. Each Volume appears to the Connected PC as one drive.
 _Avoid_: disk, drive, LUN, partition
 
-**Logging**:
-The state, set by the Application Service, in which the Instrument records data to one or more Volumes (its log destinations), none of which may have PC Access on.
-_Avoid_: recording, capture, data logging
+**Application Logging**:
+The state, set by the Application Service, in which the Instrument is collecting data as part of a measurement and recording it to its Volumes. While it is on, the clock is not corrected, so the timestamps on collected data stay consistent.
+_Avoid_: Logging (on its own), recording, capture, data logging
+
+**Debug log**:
+The files of log messages a Service would print on the debug UART (every Service's in one file, the Application Service's also in a file of its own), written to each Volume enabled for them that GTE owns. Separate from the data collected during Application Logging.
+_Avoid_: event log, system log, Logging
+
+**Log level**:
+A Service's threshold for its own log messages (debug, info, warning, error, critical). Messages below it are neither printed on the debug UART nor saved to the log files.
+_Avoid_: verbosity, debug level
 
 **PC Access**:
 The per-Volume setting that hands the Volume to the Connected PC. While it is off (the default after every power-up), only the firmware uses the Volume and the Connected PC sees no medium; while it is on, the Connected PC owns the Volume and the firmware does not write to it.

@@ -22,7 +22,7 @@
  * command: *RST
  * form: event
  * brief: Return the instrument to a safe remote state.
- * details: Stops Logging and calls the Application Service's reset hook. Does not change any Config Parameter, write to EEPROM, or clear the error queue.
+ * details: Stops Application Logging and calls the Application Service's reset hook. Does not change any Config Parameter, write to EEPROM, or clear the error queue.
  * group: IEEE 488.2 common commands
  */
 
@@ -168,7 +168,7 @@
  * form: query
  * syntax: STATus:OPERation[:EVENt]?
  * brief: Read and clear the OPERation event register.
- * details: Bit 8: Logging.
+ * details: Bit 8: Application Logging.
  * response: Integer
  * group: Status
  */
