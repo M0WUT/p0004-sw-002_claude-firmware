@@ -1,0 +1,415 @@
+<title>GTE Front Panel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* PROTOTYPE (throwaway) for "Navigating the LVGL interface" (#17). Iteration 5: page carousel (A) with on-device editing of every Config Parameter.
+   Layout: device mock on the left, simulation controls + live state on the right; stacks on phones. */
+:root {
+  --bg: #eef1f3; --panel: #ffffff; --ink: #1b2429; --muted: #5d6b73; --line: #d3dade;
+  --accent: #b4730a; --warn: #b26b00; --crit: #b3261e;
+  --sans: "IBM Plex Sans", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* the TFT (single look, not themed). From sw-001 include/colours.h: M0WUT_DEFAULT_BACKGROUND / _FOREGROUND, plus LVGL palette_main colours */
+  --tft-bg: #080808; --tft-fg: #ffffff; --tft-dim: #9a9a9a; --tft-acc: #e1970c; --tft-warn: #ffeb3b; --tft-crit: #f44336; --tft-blue: #03a9f4;
+  --tft-bar: #161616; --tft-line: #2a2a2a;
+  --case: #2b3236; --key: #3a4246;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12171a; --panel: #1a2125; --ink: #e3eaed; --muted: #92a2a9; --line: #2c363b; --accent: #e1970c; --warn: #f0a63a; --crit: #ff6b62; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #12171a; --panel: #1a2125; --ink: #e3eaed; --muted: #92a2a9; --line: #2c363b; --accent: #e1970c; --warn: #f0a63a; --crit: #ff6b62; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; }
+h1 { font-size: 1.35rem; margin: 0 0 4px; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0 0 18px; max-width: 70ch; line-height: 1.45; }
+.wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 20px; align-items: start; max-width: 1200px; }
+@media (max-width: 820px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+
+.device { background: var(--case); border-radius: 14px; padding: 18px 18px 14px; box-shadow: 0 6px 24px rgba(0,0,0,.25); max-width: 100%; }
+.screen-box { position: relative; width: 100%; aspect-ratio: 320 / 170; overflow: hidden; border-radius: 4px; background: #000; }
+#tft { position: absolute; left: 0; top: 0; width: 320px; height: 170px; transform-origin: 0 0; background: var(--tft-bg); color: var(--tft-fg); font-family: var(--mono); font-size: 12px; overflow: hidden; }
+.keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4%; padding: 12px 2% 0; }
+.key { height: 34px; border-radius: 6px; border: 0; background: var(--key); color: #c9d3d7; font: 600 12px var(--sans); cursor: pointer; box-shadow: inset 0 -3px 0 rgba(0,0,0,.35); touch-action: none; user-select: none; }
+.key.down { transform: translateY(2px); box-shadow: inset 0 -1px 0 rgba(0,0,0,.35); background: #485156; }
+.key:focus-visible { outline: 2px solid var(--tft-acc); outline-offset: 2px; }
+.case-label { display: flex; justify-content: space-between; color: #8d9a9f; font: 500 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; margin-top: 10px; }
+
+/* TFT internals (320x170 px). The page uses the full screen; overlays sit on top. */
+.page { position: absolute; inset: 0; padding: 6px 8px; }
+.ind { position: absolute; top: 4px; right: 6px; display: flex; gap: 4px; z-index: 2; }
+.chip { padding: 0 4px; border-radius: 3px; line-height: 14px; font-size: 10px; font-weight: 600; }
+.chip.log { background: var(--tft-crit); color: #fff; } .chip.pc { background: #0d2f3d; color: var(--tft-blue); } .chip.ot { background: var(--tft-crit); color: #fff; } .chip.w { background: var(--tft-warn); color: #1a1600; }
+.title { color: var(--tft-acc); font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+.big { font-size: 64px; font-weight: 500; line-height: 1; letter-spacing: -2px; }
+.unit { font-size: 18px; color: var(--tft-dim); margin-left: 4px; }
+.row { display: flex; justify-content: space-between; line-height: 19px; gap: 8px; font-size: 13px; }
+.row .k { color: var(--tft-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .row .v { white-space: nowrap; }
+.list .it { padding: 0 4px; line-height: 19px; font-size: 13px; display: flex; justify-content: space-between; }
+.list .it.sel { background: var(--tft-acc); color: #080808; }
+.hint { color: var(--tft-dim); font-size: 11px; margin-top: 4px; }
+.dots { position: absolute; left: 0; right: 0; bottom: 4px; display: flex; justify-content: center; gap: 4px; } .dot { width: 5px; height: 5px; border-radius: 50%; background: #3a3a3a; } .dot.on { background: var(--tft-acc); }
+.legend { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; display: grid; grid-template-columns: repeat(4, 80px); background: rgba(22,22,22,.94); border-top: 1px solid var(--tft-acc); transition: opacity .3s; z-index: 3; }
+.legend.hide { opacity: 0; }
+.cell { position: relative; display: flex; align-items: center; justify-content: center; font: 600 11px var(--mono); color: var(--tft-acc); border-left: 1px solid var(--tft-line); overflow: hidden; white-space: nowrap; }
+.cell:first-child { border-left: 0; } .cell.empty { color: transparent; } .cell.held { background: var(--tft-acc); color: #080808; }
+.cell .bar { position: absolute; left: 0; bottom: 0; height: 2px; background: #ffffff; }
+.pop { position: absolute; left: 14px; right: 14px; top: 30px; background: #121212; border: 1px solid var(--tft-warn); border-radius: 4px; padding: 8px 10px; z-index: 4; box-shadow: 0 0 0 999px rgba(0,0,0,.45); }
+.pop .code { color: var(--tft-warn); font-weight: 600; font-size: 12px; } .pop .msg { font-size: 13px; margin-top: 2px; } .pop .sup { color: var(--tft-dim); font-size: 11px; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pop.crit { border-color: var(--tft-crit); } .pop.crit .code { color: var(--tft-crit); }
+.fatal { position: absolute; inset: 0; background: #1a0000; border: 2px solid var(--tft-crit); padding: 12px; z-index: 5; }
+.fatal .code { color: var(--tft-crit); font-weight: 600; font-size: 14px; } .fatal .msg { font-size: 15px; margin-top: 6px; } .fatal .sup { color: var(--tft-dim); font-size: 12px; margin-top: 4px; }
+.modal { position: absolute; inset: 20px 16px 20px; background: #121212; border: 1px solid var(--tft-acc); border-radius: 4px; padding: 10px; z-index: 5; box-shadow: 0 0 0 999px rgba(0,0,0,.55); }
+.prog { height: 8px; background: #2a2a2a; border-radius: 2px; margin-top: 12px; overflow: hidden; } .prog > i { display: block; height: 100%; background: var(--tft-acc); }
+.boot { position: absolute; inset: 0; background: var(--tft-bg); z-index: 6; }
+.boot img { position: absolute; top: 10px; image-rendering: pixelated; }
+.boot .ver { position: absolute; left: 0; right: 0; bottom: 25px; text-align: center; color: #fff; font-size: 11px; white-space: pre; }
+.boot .init { position: absolute; left: 0; right: 0; bottom: 7px; text-align: center; color: #fff; font-size: 11px; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 14px; min-width: 0; }
+.panel > * { min-width: 0; }
+.panel h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 6px; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { font: 500 12.5px var(--sans); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.btn:hover { border-color: var(--accent); } .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.btn.w { border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); } .btn.c { border-color: color-mix(in srgb, var(--crit) 55%, var(--line)); }
+pre.state { margin: 0; font: 11.5px/1.45 var(--mono); background: color-mix(in srgb, var(--bg) 70%, var(--panel)); border: 1px solid var(--line); border-radius: 6px; padding: 8px; overflow: auto; max-height: 320px; font-variant-numeric: tabular-nums; }
+.notes { font-size: 13px; line-height: 1.45; color: var(--muted); margin: 0; padding-left: 18px; }
+.notes b { color: var(--ink); font-weight: 600; }
+kbd { font: 11px var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
+@media (prefers-reduced-motion: reduce) { .legend { transition: none; } }
+.cell { flex-direction: column; line-height: 1.05; } .cell small { font: 500 7px var(--mono); color: var(--tft-dim); } .cell.held small { color: #3a2a00; }
+.list .it.sel .v, .list .it.sel span { color: #080808; }
+.ed { margin-top: 10px; font-size: 22px; letter-spacing: 1px; white-space: pre; overflow: hidden; }
+.ed .cur { background: var(--tft-acc); color: #080808; } .ed .ext { color: #555; }
+.edval { margin-top: 12px; font-size: 34px; color: var(--tft-acc); } .edval .unit { font-size: 15px; }
+</style>
+
+<h1>GTE Front Panel</h1>
+<p class="sub">Prototype, iteration 7: the page carousel with every Config Parameter editable on the device, using sw-001's colours and startup screen. Click the keys under the screen, or press <kbd>1</kbd>–<kbd>4</kbd>; hold a key where its label shows a second, smaller action (2 s for editor shortcuts, 3 s for destructive confirmations).</p>
+
+<div class="wrap">
+  <section aria-label="Device">
+    <div class="device">
+      <div class="screen-box" id="screenBox"><div id="tft"></div></div>
+      <div class="keys">
+        <button class="key" id="k1" aria-label="Soft Key 1">1</button>
+        <button class="key" id="k2" aria-label="Soft Key 2">2</button>
+        <button class="key" id="k3" aria-label="Soft Key 3">3</button>
+        <button class="key" id="k4" aria-label="Soft Key 4">4</button>
+      </div>
+      <div class="case-label"><span>GTE · Example Instrument</span><span>Page carousel</span></div>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div>
+      <h2>How it behaves</h2>
+      <ul class="notes">
+        <li><b>Soft Key 1 = Next screen</b>, wrapping: Home (the Application), each Service, Warnings, About (Core). On a page too long to fit, <b>Soft Keys 2/3 scroll</b> (▲ ▼) without editing. <b>Soft Key 4 = Edit</b> on every page.</li>
+        <li><b>Edit</b> gives <b>▲ ▼ Edit Back</b>: Edit (Soft Key 3) shows only on a Config Parameter; on a Status Value it is blank and does nothing. Colour does not distinguish them. Back is Soft Key 4.</li>
+        <li><b>Numbers</b>: ▲ ▼ by the step, Save, Back. <b>Booleans</b>: ▲ ▼ toggle. <b>Text</b>: ▲ ▼ cycle the highlighted character through the editable character list (A–Z, a–z, 0–9, space, . and -); <b>▶</b> moves right and wraps, including one past the end; <b>Del</b> deletes and shifts left. Hold ▶ for 2 s to Save, hold Del for 2 s for Back.</li>
+        <li><b>Secrets</b> (e.g. the Home Assistant password) show as •••• and the editor starts blank.</li>
+        <li><b>Warnings</b>: Edit, then ▲ ▼, Clear, Clear all (hold for Back). Saving runs the same checks as the web page and SCPI; a refusal needs OK. Key labels hide after 5 s only on the Application's own screens.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Simulate</h2>
+      <div class="btns">
+        <button class="btn w" id="simWarn">Raise a Warning</button>
+        <button class="btn w" id="simWT">Toggle warning temperature</button>
+        <button class="btn c" id="simCT">Critical temperature</button>
+        <button class="btn" id="simFmt">Format SD card</button>
+        <button class="btn" id="simBoot">Restart device</button>
+      </div>
+    </div>
+    <div>
+      <h2>State</h2>
+      <pre class="state" id="state"></pre>
+    </div>
+  </aside>
+</div>
+
+<script>
+// ================================================================
+// Characters the on-device text editor cycles through (▲ goes forward, ▼ back).
+// Edit this one line to change what can be typed. In the firmware this is a single
+// definition in one header.
+const TEXT_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .-';
+// ================================================================
+const LOGOS = __LOGOS__;
+// ---------------------------------------------------------------- model (stubbed, in memory)
+const S = {
+  stack: [], lastPress: Date.now(), logging: false, warnTemp: false, fatal: null,
+  popups: [], popupT0: 0, active: [], ackPopup: null, formatting: null,
+  temp: 31.4, fanPct: 22, vIn: 12.06, iIn: 0.412,
+};
+// Config Parameters per Service (types and limits as declared in each Service's get_config_fields)
+const CFG = {
+  Application: [
+    { id: 'setpoint', label: 'Output setpoint', type: 'float', value: 10.0, step: 0.01, min: 0, max: 12, dec: 2, unit: 'V' },
+    { id: 'name', label: 'Channel name', type: 'text', value: 'CH1', maxLen: 12 },
+  ],
+  Thermal: [
+    { id: 'warn', label: 'Warning temperature', type: 'float', value: 60.0, step: 0.5, min: 30, max: 100, dec: 1, unit: '°C' },
+    { id: 'crit', label: 'Critical temperature', type: 'float', value: 75.0, step: 0.5, min: 30, max: 110, dec: 1, unit: '°C' },
+    { id: 'f1t1', label: 'Fan 1 point 1 temp', type: 'int', value: 35, step: 1, min: 0, max: 100, unit: '°C' },
+    { id: 'f1p1', label: 'Fan 1 point 1 speed', type: 'int', value: 0, step: 5, min: 0, max: 100, unit: '%' },
+    { id: 'tau', label: 'Fan filter', type: 'int', value: 10, step: 1, min: 1, max: 60, unit: 's' },
+  ],
+  Power: [ { id: 'avg', label: 'Averaging', type: 'int', value: 16, step: 1, min: 1, max: 1024, unit: 'samples' } ],
+  Storage: [
+    { id: 'logsd', label: 'Log to SD card', type: 'bool', value: true },
+    { id: 'logusb', label: 'Log to USB stick', type: 'bool', value: false },
+    { id: 'pcsd', label: 'SD PC Access', type: 'bool', value: false },
+    { id: 'pcusb', label: 'USB PC Access', type: 'bool', value: false },
+  ],
+  Network: [
+    { id: 'dhcp', label: 'Use DHCP', type: 'bool', value: true },
+    { id: 'host', label: 'Hostname', type: 'text', value: 'gte-d7a79d', maxLen: 31 },
+    { id: 'ip', label: 'Static IP', type: 'ipv4', value: '192.168.1.2' },
+    { id: 'ntp', label: 'NTP server', type: 'text', value: 'europe.pool.ntp.org', maxLen: 31 },
+  ],
+  'Home Assistant': [
+    { id: 'en', label: 'Enabled', type: 'bool', value: true },
+    { id: 'broker', label: 'Broker host', type: 'text', value: 'homeassistant.local', maxLen: 31 },
+    { id: 'user', label: 'Username', type: 'text', value: 'gte', maxLen: 31 },
+    { id: 'pass', label: 'Password', type: 'text', value: 'hunter2', maxLen: 31, secret: true },
+  ],
+  Core: [
+    { id: 'dev', label: 'Device name', type: 'text', value: 'Bench PSU', maxLen: 16 },
+    { id: 'pon', label: 'Power-on count', type: 'int', value: 137, step: 1, min: 0, max: 999999 },
+  ],
+};
+const STATUS = {
+  Application: () => [['Output', (CFG.Application[0].value * 0.998).toFixed(3) + ' V'], ['Logging', S.logging ? 'on' : 'off']],
+  Thermal: () => [['Board temperature', S.temp.toFixed(1) + ' °C'], ['Fan 1', S.warnTemp ? '100 %' : S.fanPct + ' %'], ['Fan 1 detected', 'yes']],
+  Power: () => [['Input', S.vIn.toFixed(2) + ' V'], ['Input current', S.iIn.toFixed(3) + ' A'], ['Source', 'Barrel jack']],
+  Storage: () => [['SD used', '1.2 / 7.3 GiB'], ['USB stick', '480 MiB'], ['PC connected', 'yes']],
+  Network: () => [['Link', 'up 100M'], ['IP', '192.168.1.57']],
+  'Home Assistant': () => [['MQTT', 'connected']],
+  Core: () => [['Firmware', '1.0.0'], ['GTE Core', '1.4.2'], ['LCD Board', 'rev 1'], ['IO Board', 'not fitted']],
+};
+const SAMPLE_WARNINGS = [
+  [602, 'USB stick removed during Logging', 'LOG_0042.CSV'],
+  [305, 'Fan 2 stalled', 'tach 0 rpm for 5 s'],
+  [1102, 'Second SCPI connection refused', 'TCP 192.168.1.40'],
+  [702, 'Volume not available', 'SD card has PC Access on'],
+];
+const PAGES = ['Home', 'Thermal', 'Power', 'Storage', 'Network', 'Home Assistant', 'Warnings', 'About'];
+const SVC = { Home: 'Application', About: 'Core' }; // page -> Service whose values it shows
+
+// ---------------------------------------------------------------- helpers (avoid names that shadow window.*, e.g. "top")
+const $ = id => document.getElementById(id);
+const tft = $('tft');
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const cur = () => S.stack[S.stack.length - 1];
+const push = (name, data = {}) => S.stack.push({ name, sel: 0, ...data });
+const pop = () => { if (S.stack.length > 1) S.stack.pop(); };
+// Hold durations: editor shortcuts (Save / Back) 2 s; destructive confirmations 3 s
+const HOLD_EDIT_MS = 2000, HOLD_CONFIRM_MS = 3000;
+const K = (label, click, hold3, sub, holdMs = HOLD_EDIT_MS) => ({ label, click, hold3, sub, holdMs });
+const fmt = c => c.secret ? (c.value ? '••••' : '(not set)') : c.type === 'bool' ? (c.value ? 'on' : 'off') : c.type === 'float' ? c.value.toFixed(c.dec) + (c.unit ? ' ' + c.unit : '') : c.type === 'int' ? c.value + (c.unit ? ' ' + c.unit : '') : c.value;
+function itemsFor(svc) { // Status Values then Config Parameters, as one selectable list
+  return [...STATUS[svc]().map(([label, v]) => ({ kind: 'status', label, v })), ...CFG[svc].map(c => ({ kind: 'config', label: c.label, v: fmt(c), c }))];
+}
+const VIS_ROWS = 6;
+function listHtml(items, sel, showSel, scrollTop) {
+  const vis = VIS_ROWS, start = scrollTop != null ? scrollTop : Math.max(0, Math.min(sel - 2, items.length - vis));
+  return `<div class="list">${items.slice(start, start + vis).map((it, j) => {
+    const i = start + j;
+    return `<div class="it ${it.kind === 'config' ? 'cfg' : ''} ${showSel && i === sel ? 'sel' : ''}"><span class="k">${esc(it.label)}</span><span class="v">${esc(it.v)}</span></div>`;
+  }).join('')}</div>`;
+}
+function popup(w) { S.popups.push(w); if (S.popups.length === 1) S.popupT0 = Date.now(); }
+function raise(w) { const i = S.active.findIndex(a => a[0] === w[0]); if (i >= 0) { S.active[i] = [...w, new Date()]; return; } S.active.push([...w, new Date()]); popup(w); }
+const refuse = msg => { S.ackPopup = msg; };
+function toggleLog() { if (!S.logging && CFG.Storage[2].value) return refuse('SD card has PC Access on'); S.logging = !S.logging; }
+
+// Same checks as the web page / SCPI (validate_config_field). Returns an error string or null.
+function validate(svc, c, v) {
+  if (svc === 'Thermal' && c.id === 'crit' && v <= CFG.Thermal[0].value) return 'Critical temperature must be above warning temperature';
+  if (svc === 'Thermal' && c.id === 'warn' && v >= CFG.Thermal[1].value) return 'Warning temperature must be below critical temperature';
+  if (svc === 'Storage' && c.id === 'pcsd' && v && S.logging && CFG.Storage[0].value) return 'SD card is a Logging destination';
+  if (c.type === 'ipv4' && !/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(v)) return 'Not a valid IPv4 address';
+  if (c.type === 'ipv4' && v.split('.').some(o => +o > 255)) return 'Each part of the address must be 0-255';
+  if (c.type === 'text' && !v.trim()) return 'Must not be empty';
+  return null;
+}
+function save(e) {
+  const err = validate(e.svc, e.c, e.value);
+  if (err) return refuse(err);
+  e.c.value = e.value; pop();
+  if (e.svc === 'Storage' && e.c.id === 'pcsd' && e.value) popup([0, 'SD card passed to PC', 'Warnings and errors will not be logged to it']);
+}
+
+// ---------------------------------------------------------------- screens
+const IP_CHARS = '0123456789.';
+function screen(s) {
+  if (s.name === 'confirm') return { app: false, html: `<div class="title">${esc(s.q)}</div><div class="hint">Hold Soft Key 4 for 3 s to confirm.</div>`,
+    keys: [K('Cancel', pop), K(''), K(''), K('Yes', null, () => { pop(); s.yes(); }, 'hold 3 s', HOLD_CONFIRM_MS)] };
+  if (s.name === 'select') { // choose a row on a Service page
+    const items = itemsFor(s.svc), it = items[s.sel];
+    return { app: false, html: `<div class="title">${s.svc === 'Core' ? 'About' : s.svc}</div>` + listHtml(items, s.sel, true),
+      keys: [K('▲', () => s.sel = Math.max(0, s.sel - 1)), K('▼', () => s.sel = Math.min(items.length - 1, s.sel + 1)),
+        it.kind === 'config' ? K('Edit', () => push('edit', { svc: s.svc, c: it.c, value: it.c.secret ? '' : it.c.value, pos: 0 })) : K(''), K('Back', pop)] };
+  }
+  if (s.name === 'warnsel') {
+    const items = S.active.map(w => ({ label: w[0] + ' ' + w[1], v: w[w.length - 1].toTimeString().slice(0, 5) }));
+    if (!items.length) { pop(); return screen(cur()); }
+    s.sel = Math.min(s.sel, items.length - 1);
+    return { app: false, html: `<div class="title">Warnings</div>` + listHtml(items, s.sel, true),
+      keys: [K('▲', () => s.sel = Math.max(0, s.sel - 1)), K('▼', () => s.sel = Math.min(items.length - 1, s.sel + 1)),
+        K('Clear', () => { S.active.splice(s.sel, 1); recheck(); }), K('Clear all', () => { S.active = []; recheck(); }, pop, 'hold 2s: Back')] };
+  }
+  if (s.name === 'edit') return editScreen(s);
+  // carousel pages: Next screen (wraps), ▲ ▼ only when the page is too long to fit, Edit on Soft Key 4
+  const page = s.page ?? 0, name = PAGES[page];
+  const dots = `<div class="dots">${PAGES.map((_, i) => `<i class="dot ${i === page ? 'on' : ''}"></i>`).join('')}</div>`;
+  const next = K('Next', () => { s.page = (page + 1) % PAGES.length; s.scroll = 0; });
+  const scrollKeys = n => n > VIS_ROWS
+    ? [K('▲', () => s.scroll = Math.max(0, (s.scroll || 0) - 1)), K('▼', () => s.scroll = Math.min(n - VIS_ROWS, (s.scroll || 0) + 1))]
+    : [K(''), K('')];
+  if (name === 'Home') return { app: true, html: `<div class="title">Example Instrument · ${esc(CFG.Application[1].value)}</div><div style="margin-top:14px"><span class="big">${(CFG.Application[0].value * 0.998).toFixed(3)}</span><span class="unit">V</span></div>`
+      + `<div class="hint">${S.logging ? 'Logging to SD card' : 'Output voltage'}</div>` + dots,
+    keys: [next, K(''), K(S.logging ? 'Stop log' : 'Log', toggleLog), K('Edit', () => push('select', { svc: 'Application' }))] };
+  if (name === 'Warnings') {
+    const items = S.active.map(w => ({ label: w[0] + ' ' + w[1], v: w[w.length - 1].toTimeString().slice(0, 5) }));
+    s.scroll = Math.min(s.scroll || 0, Math.max(0, items.length - VIS_ROWS));
+    return { app: false, html: `<div class="title">Warnings</div>` + (items.length ? listHtml(items, 0, false, s.scroll) : `<div class="hint">No active warnings</div>`) + dots,
+      keys: [next, ...scrollKeys(items.length), items.length ? K('Edit', () => push('warnsel')) : K('')] };
+  }
+  const svc = SVC[name] || name, items = itemsFor(svc);
+  s.scroll = Math.min(s.scroll || 0, Math.max(0, items.length - VIS_ROWS));
+  return { app: false, html: `<div class="title">${name}</div>` + listHtml(items, 0, false, s.scroll) + dots,
+    keys: [next, ...scrollKeys(items.length), K('Edit', () => push('select', { svc }))] };
+}
+function recheck() { if (S.warnTemp) raise([401, 'Warning temperature', 'still present']); }
+function editScreen(e) {
+  const c = e.c, head = `<div class="title">${esc(c.label)}</div>`;
+  const back = K('Back', pop);
+  if (c.type === 'bool') return { app: false, html: head + `<div class="edval">${e.value ? 'ON' : 'OFF'}</div>`,
+    keys: [K('▲', () => e.value = !e.value), K('▼', () => e.value = !e.value), K('Save', () => save(e)), back] };
+  if (c.type === 'int' || c.type === 'float') {
+    const clamp = v => Math.min(c.max, Math.max(c.min, +v.toFixed(c.dec || 0)));
+    const shown = c.type === 'float' ? e.value.toFixed(c.dec) : e.value;
+    return { app: false, html: head + `<div class="edval">${shown}<span class="unit">${esc(c.unit || '')}</span></div><div class="hint">${c.min} to ${c.max}, step ${c.step}</div>`,
+      keys: [K('▲', () => e.value = clamp(e.value + c.step)), K('▼', () => e.value = clamp(e.value - c.step)), K('Save', () => save(e)), back] };
+  }
+  // text / IPv4: Keysight-style character editor
+  const chars = c.type === 'ipv4' ? IP_CHARS : TEXT_CHARS, maxLen = c.type === 'ipv4' ? 15 : c.maxLen;
+  const str = e.value, slots = Math.max(1, str.length < maxLen ? str.length + 1 : str.length); // one slot past the end extends the string
+  e.pos = Math.min(e.pos, slots - 1);
+  const cycle = d => {
+    const ch = e.pos < str.length ? str[e.pos] : null;
+    const i = ch === null ? (d > 0 ? 0 : chars.length - 1) : (chars.indexOf(ch) + d + chars.length) % chars.length;
+    e.value = str.slice(0, e.pos) + chars[i] + str.slice(e.pos + 1);
+  };
+  let disp = '';
+  for (let i = 0; i < slots; i++) {
+    const ch = i < str.length ? str[i] : '_';
+    disp += `<span class="${i === e.pos ? 'cur' : ''} ${i >= str.length ? 'ext' : ''}">${esc(ch === ' ' ? ' ' : ch)}</span>`;
+  }
+  return { app: false, html: head + `<div class="ed">${disp}</div><div class="hint">${str.length}/${maxLen} characters${c.secret ? ' · secret: starts blank, never shown' : ''}</div>`,
+    keys: [K('▲', () => cycle(1)), K('▼', () => cycle(-1)), K('▶', () => e.pos = (e.pos + 1) % slots, () => save(e), 'hold 2s: Save'),
+      K('Del', () => { if (e.pos < str.length) e.value = str.slice(0, e.pos) + str.slice(e.pos + 1); }, pop, 'hold 2s: Back')] };
+}
+
+// ---------------------------------------------------------------- startup screen (sw-001 create_startup_screen + main.cpp init label)
+const BOOT_SERVICES = ['Core', 'Power', 'Thermal', 'Ethernet', 'Webpage', 'Storage', 'USB Device', 'USB Host', 'SCPI', 'Home Assistant', 'UI', 'Application'];
+let boot = null;
+const BOOT_MS = 1200 + BOOT_SERVICES.length * 180 + 900;
+function bootHtml() {
+  const dt = Date.now() - boot.t0, l = LOGOS.logo, g = LOGOS.gte_logo, i = Math.floor((dt - 1200) / 180);
+  const label = dt < 1200 ? 'By Dan M0WUT' : (i < BOOT_SERVICES.length ? `Starting ${BOOT_SERVICES[i]} service...` : 'Initialisation complete');
+  return `<div class="boot"><img src="${l.src}" width="${l.w}" height="${l.h}" style="left:7px" alt="M0WUT logo"><img src="${g.src}" width="${g.w}" height="${g.h}" style="right:7px" alt="GTE logo">`
+    + `<div class="ver">1.0.0       2026-11-27T10:12:00Z</div><div class="init">${esc(label)}</div></div>`;
+}
+
+// ---------------------------------------------------------------- render
+const LEGEND_MS = 5000, POPUP_MS = 2000;
+function render() {
+  if (boot && Date.now() - boot.t0 > BOOT_MS) { boot = null; S.lastPress = Date.now(); }
+  if (S.popups.length && Date.now() - S.popupT0 > POPUP_MS) { S.popups.shift(); S.popupT0 = Date.now(); }
+  const sc = screen(cur());
+  let keys = S.formatting || boot || S.fatal ? [K(''), K(''), K(''), K('')] : sc.keys;
+  if (S.ackPopup) keys = [K(''), K(''), K(''), K('OK', () => S.ackPopup = null)];
+  const legendVisible = !boot && !S.formatting && !S.fatal && (!sc.app || S.ackPopup || Date.now() - S.lastPress < LEGEND_MS);
+  let h = `<div class="page">${sc.html}</div>`;
+  const ind = (S.logging ? '<span class="chip log">● LOG</span>' : '') + (CFG.Storage[2].value || CFG.Storage[3].value ? '<span class="chip pc">PC</span>' : '')
+    + (S.warnTemp ? '<span class="chip ot">TEMP</span>' : '') + (S.active.length ? `<span class="chip w">⚠ ${S.active.length}</span>` : '');
+  if (ind) h += `<div class="ind">${ind}</div>`;
+  h += `<div class="legend ${legendVisible ? '' : 'hide'}">${keys.map((k, i) => {
+    const prog = hold.key === i && k.hold3 && !hold.wake ? Math.min(1, (Date.now() - hold.t0) / k.holdMs) : 0;
+    return `<div class="cell ${k.label ? '' : 'empty'} ${hold.key === i && !hold.wake ? 'held' : ''}">${esc(k.label || '·')}${k.sub ? `<small>${esc(k.sub)}</small>` : ''}${prog ? `<i class="bar" style="width:${prog * 100}%"></i>` : ''}</div>`;
+  }).join('')}</div>`;
+  if (S.popups.length) { const w = S.popups[0]; h += `<div class="pop"><div class="code">${w[0] ? 'Warning ' + w[0] : esc(w[1])}</div><div class="msg">${esc(w[0] ? w[1] : w[2])}</div>${w[0] ? `<div class="sup">${esc(w[2])}</div>` : ''}</div>`; }
+  if (S.ackPopup) h += `<div class="pop crit"><div class="code">Not possible</div><div class="msg">${esc(S.ackPopup)}</div><div class="sup">Press OK to dismiss</div></div>`;
+  if (S.fatal) h += `<div class="fatal"><div class="code">FATAL ERROR ${S.fatal[0]}</div><div class="msg">${esc(S.fatal[1])}</div><div class="sup">${esc(S.fatal[2])}</div><div class="hint">Fans at 100 %. Application shut down. Restart the device to continue.</div></div>`;
+  if (S.formatting) h += `<div class="modal"><div class="title">Formatting ${S.formatting.vol}</div><div class="hint">Do not remove the card. This window closes when formatting finishes.</div><div class="prog"><i style="width:${S.formatting.pct}%"></i></div><div class="hint">${S.formatting.pct.toFixed(0)} %</div></div>`;
+  if (boot) h += bootHtml();
+  tft.innerHTML = h;
+  S._keys = keys; S._legendVisible = legendVisible;
+  const c = cur();
+  $('state').textContent = boot ? 'startup screen (sw-001 create_startup_screen)' : JSON.stringify({
+    screen: S.stack.map(x => x.name === 'pages' ? 'page:' + PAGES[x.page ?? 0] : x.name + (x.svc ? ':' + x.svc : '')).join(' › '),
+    selected: c.name === 'select' ? itemsFor(c.svc)[c.sel].label : (c.name === 'warnsel' ? c.sel : undefined),
+    editing: c.name === 'edit' ? { param: c.c.label, value: c.value, cursor: c.pos } : undefined,
+    legend: (S.ackPopup ? 'popup needs OK' : sc.app ? 'Application screen' : 'Core screen') + (legendVisible ? ' (visible)' : ' (hidden: next press only shows it)'),
+    keys: keys.map(k => k.label || '-').join(' | '),
+    logging: S.logging, warningTemperature: S.warnTemp, fatalError: S.fatal ? S.fatal[0] + ' ' + S.fatal[1] : null,
+    popup: S.popups.length ? `${S.popups[0][0]} ${S.popups[0][1]} (${S.popups.length} queued)` : null, ackPopup: S.ackPopup,
+    activeWarnings: S.active.map(w => `${w[0]} ${w[1]}`),
+    config: Object.fromEntries(Object.entries(CFG).map(([k, v]) => [k, Object.fromEntries(v.map(c => [c.id, c.value]))])),
+  }, null, 2);
+}
+
+// ---------------------------------------------------------------- Soft Keys: click, 3 s hold; first press after the labels hide only wakes them
+const hold = { key: null, t0: 0, fired: false, wake: false };
+function press(i) {
+  if (hold.key !== null || boot) return;
+  hold.key = i; hold.t0 = Date.now(); hold.fired = false; hold.wake = !S._legendVisible;
+  $('k' + (i + 1)).classList.add('down');
+  S.lastPress = Date.now();
+}
+function release(i) {
+  if (hold.key !== i) return;
+  $('k' + (i + 1)).classList.remove('down');
+  const k = S._keys[i];
+  if (!hold.wake && !S.formatting && !S.fatal && k && !hold.fired && (!k.hold3 || Date.now() - hold.t0 < k.holdMs) && k.click) k.click();
+  hold.key = null; S.lastPress = Date.now(); render();
+}
+function tickHold() {
+  if (hold.key === null || hold.wake || S.formatting || S.fatal) return;
+  const k = S._keys[hold.key];
+  if (k && k.hold3 && !hold.fired && Date.now() - hold.t0 >= k.holdMs) { hold.fired = true; k.hold3(); }
+}
+for (let i = 0; i < 4; i++) {
+  const b = $('k' + (i + 1));
+  b.addEventListener('pointerdown', e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (x) {} press(i); render(); });
+  b.addEventListener('pointerup', () => release(i));
+  b.addEventListener('pointercancel', () => release(i));
+  b.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); press(i); render(); } });
+  b.addEventListener('keyup', e => { if (e.key === 'Enter' || e.key === ' ') release(i); });
+}
+document.addEventListener('keydown', e => { if (['1', '2', '3', '4'].includes(e.key) && !e.repeat) { press(+e.key - 1); render(); } });
+document.addEventListener('keyup', e => { if (['1', '2', '3', '4'].includes(e.key)) release(+e.key - 1); });
+
+// ---------------------------------------------------------------- simulation controls
+let warnIdx = 0;
+$('simWarn').onclick = () => { raise(SAMPLE_WARNINGS[warnIdx++ % SAMPLE_WARNINGS.length]); render(); };
+$('simWT').onclick = () => { S.warnTemp = !S.warnTemp; if (S.warnTemp) { S.temp = 62.3; raise([401, 'Warning temperature', `Board temperature 62.3 °C (limit ${CFG.Thermal[0].value.toFixed(1)} °C)`]); } else S.temp = 31.4; render(); };
+$('simCT').onclick = () => { S.temp = 76.1; S.logging = false; S.fatal = [402, 'Critical temperature', `Board temperature 76.1 °C (limit ${CFG.Thermal[1].value.toFixed(1)} °C)`]; render(); };
+$('simFmt').onclick = () => { if (CFG.Storage[2].value) refuse('Format needs SD PC Access off'); else S.stack.push({ name: 'confirm', q: 'Format SD card? All data is erased.', yes: () => S.formatting = { vol: 'SD card', pct: 0 } }); render(); };
+$('simBoot').onclick = () => { boot = { t0: Date.now() }; S.fatal = null; S.warnTemp = false; S.temp = 31.4; S.active = []; S.ackPopup = null; S.stack = [{ name: 'pages', page: 0 }]; render(); };
+
+function fit() { tft.style.transform = `scale(${$('screenBox').clientWidth / 320})`; }
+new ResizeObserver(fit).observe($('screenBox')); fit();
+
+setInterval(() => {
+  S.temp += (Math.random() - .5) * .1; S.vIn += (Math.random() - .5) * .01; S.iIn += (Math.random() - .5) * .003;
+  if (S.formatting) { S.formatting.pct += 1.6; if (S.formatting.pct >= 100) S.formatting = null; }
+  tickHold(); render();
+}, 100);
+
+S.stack = [{ name: 'pages', page: 0 }];
+boot = { t0: Date.now() };
+render();
+</script>
