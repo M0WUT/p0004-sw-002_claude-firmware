@@ -59,7 +59,9 @@ enum Scenario : uint16_t {
   kLogLevels = 6,
   kSetValues = 7,
   kEepromFull = 8,
-  kNoApp = 9
+  kNoApp = 9,
+  // 10-19 are left for the SCPI scenarios (issue #44)
+  kPrintStatus = 20  // every Service's Status Values (issue #55)
 };
 
 #ifndef TEST_CONFIG_VERSION
@@ -327,10 +329,18 @@ class TestApp : public ApplicationService {
     s->Text("label", "Label", "TEST");
   }
 
+  void Acknowledge(StatusList *list) override {
+    list->StaticText("testLibrary", "GTE test library 1.0",
+                     "MIT (https://spdx.org/licenses/MIT.html)");
+  }
+
   void Tick() override {
     n_++;
     LogInfof("tick %" PRIu32, n_);
     switch (g_scenario) {
+      case kPrintStatus:
+        if (n_ == 1) PrintAllStatus();
+        break;
       case kNormal:
         if (n_ == 1) ExerciseConfigAndStatus();
         break;
@@ -381,6 +391,33 @@ class TestApp : public ApplicationService {
   }
 
  private:
+  // Every Service's Status Values through the generic path: one line for the
+  // label, then the exact value in 80-character pieces ("Status value" then
+  // "Status more" lines), since a log line holds less than a long row.
+  void PrintAllStatus() {
+    static StatusList list;  // too big for this task's stack
+    static char value[256];
+    constexpr int kPiece = 80;
+    for (size_t s = 0; s < services().count(); s++) {
+      BaseService *service = services().At(s);
+      list = StatusList{};
+      service->Status(&list);
+      for (size_t i = 0; i < list.count(); i++) {
+        list[i].Exact(value, sizeof(value));
+        LogInfof("Status label %s %s: %s", service->name(), list[i].id,
+                 list[i].label);
+        const char *kind = "value";
+        for (const char *p = value; *p || p == value; p += kPiece) {
+          LogInfof("Status %s %s %s: %.*s", kind, service->name(), list[i].id,
+                   kPiece, p);
+          kind = "more";
+          if (strlen(p) <= static_cast<size_t>(kPiece)) break;
+        }
+      }
+    }
+    LogInfo("Status done");
+  }
+
   void ExerciseConfigAndStatus() {
     SetConfig("count", "105");  // out of range
     SetConfig("count", "12");   // off step

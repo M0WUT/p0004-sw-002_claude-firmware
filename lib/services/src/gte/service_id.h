@@ -24,6 +24,7 @@ enum class ServiceId : uint8_t {
   kApplicationTest = 13,  // hardware_tests/apps/test only
   kTestAux = 14,          // hardware_tests/apps/test only
   kTestBig = 15,          // hardware_tests/apps/test only
+  kOssLicences = 16,      // open source licences (issue #55)
 };
 
 const char *ServiceName(ServiceId id);

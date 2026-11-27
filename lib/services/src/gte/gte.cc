@@ -13,6 +13,7 @@
 #include "gte/fatal.h"
 #include "gte/i2c_bus.h"
 #include "gte/logging_helper.h"
+#include "gte/oss_licences_service.h"
 #include "gte/service_helper.h"
 #include "gte/soft_keys.h"
 #include "gte/time_helper.h"
@@ -25,6 +26,7 @@ static LoggingHelper g_log;
 static ServiceHelper g_services;
 static Watchdog g_watchdog;
 static CoreService g_core;
+static OssLicencesService g_oss_licences;
 static I2CBus g_i2c(GTE_PIN_I2C_INT_SDA, GTE_PIN_I2C_INT_SCL);
 static ConfigStorage g_storage;
 static SoftKeys g_keys;
@@ -198,10 +200,12 @@ void Start() {
   ReportLastReset();
 
   g_services.RegisterService(&g_core);
+  g_services.RegisterService(&g_oss_licences);
   ServiceList extra = GteExtraServices();
   for (size_t i = 0; i < extra.count; i++)
     g_services.RegisterService(extra.items[i]);
   ApplicationService *app = GteApplication();
+  g_oss_licences.SetApplication(app);
   if (app) {
     g_services.RegisterService(app);
     char msg[80];

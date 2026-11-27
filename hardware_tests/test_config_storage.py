@@ -29,7 +29,7 @@ from conftest import (
 
 pytestmark = pytest.mark.hardware
 
-CORE, APP, AUX = 0, 13, 14
+CORE, APP, AUX, OSS_LICENCES = 0, 13, 14, 16
 KEY1, KEY4 = 1 << 0, 1 << 3
 
 
@@ -290,8 +290,9 @@ def test_factory_reset_keys_at_power_on(run_scenario, uart):
     wait_started(uart)
     assert "Count (count): 20" in config_lines(uart, "APPLICATION_TEST")
 
-    # Factory Reset with no Application registered: afterwards only CORE has a
-    # block, so the Application's and TEST_AUX's blocks were reclaimed.
+    # Factory Reset with no Application registered: afterwards only Core's own
+    # Services (CORE, OSS_LICENCES) have blocks, so the Application's and
+    # TEST_AUX's blocks were reclaimed.
     uart.clear()
     reset_with(SCENARIOS["no_app"], keys=KEY1 | KEY4)
     uart.wait_for(r"Factory Reset done; restarting$", 8)
@@ -299,7 +300,10 @@ def test_factory_reset_keys_at_power_on(run_scenario, uart):
     uart.wait_for(r"(?s)Factory Reset done.*No Application", 5)
     uart.wait_for(r"(?s)Factory Reset done.*starting the scheduler", 5)
     blocks = parse(image())
-    assert set(blocks) == {CORE}, f"blocks after Factory Reset: {sorted(blocks)}"
+    assert set(blocks) == {
+        CORE,
+        OSS_LICENCES,
+    }, f"blocks after Factory Reset: {sorted(blocks)}"
 
     u = run_scenario("normal", config=None)
     wait_started(u)

@@ -21,6 +21,9 @@ struct StatusValue {
   uint8_t decimals = 0;
   bool boolean = false;
   char text[48] = {};
+  // A constant string kept by pointer, not copied: for text longer than `text`
+  // that never changes (e.g. licence rows, issue #55).
+  const char *static_text = nullptr;
   const char *unit = "";
   DisplayHint hint = DisplayHint::kNone;
 
@@ -37,6 +40,9 @@ class StatusList {
               const char *unit = "");
   void Boolean(const char *id, const char *label, bool v);
   void Text(const char *id, const char *label, const char *v);
+  // Text that never changes and outlives the list (a string literal or static
+  // buffer); not copied, so it may be longer than StatusValue::text.
+  void StaticText(const char *id, const char *label, const char *v);
 
   size_t count() const { return count_; }
   const StatusValue &operator[](size_t i) const { return values_[i]; }

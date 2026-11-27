@@ -59,6 +59,11 @@ void StatusList::Text(const char *id, const char *label, const char *v) {
     snprintf(s->text, sizeof(s->text), "%s", v ? v : "");
 }
 
+void StatusList::StaticText(const char *id, const char *label, const char *v) {
+  if (StatusValue *s = Add(id, label, StatusType::kText))
+    s->static_text = v ? v : "";
+}
+
 void FormatBytes(int64_t bytes, char *buf, size_t size) {
   static const char *units[] = {"B", "KiB", "MiB", "GiB", "TiB"};
   double v = static_cast<double>(bytes);
@@ -88,7 +93,7 @@ void StatusValue::Exact(char *buf, size_t size) const {
       snprintf(buf, size, "%d", boolean ? 1 : 0);
       break;
     case StatusType::kText:
-      snprintf(buf, size, "%s", text);
+      snprintf(buf, size, "%s", static_text ? static_text : text);
       break;
   }
 }

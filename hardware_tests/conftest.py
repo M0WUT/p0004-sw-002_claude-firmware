@@ -218,6 +218,7 @@ SCENARIOS = {
     "set_values": 7,
     "eeprom_full": 8,
     "no_app": 9,
+    "print_status": 20,  # every Service's Status Values (#55)
 }
 
 

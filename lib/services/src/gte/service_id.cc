@@ -36,6 +36,8 @@ const char *ServiceName(ServiceId id) {
       return "TEST_AUX";
     case ServiceId::kTestBig:
       return "TEST_BIG";
+    case ServiceId::kOssLicences:
+      return "OSS_LICENCES";
   }
   return "?";
 }
