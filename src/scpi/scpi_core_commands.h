@@ -1,13 +1,15 @@
+// Copyright 2026 M0WUT
 // SCPI commands provided by GTE Core.
 //
 // Each command is documented in a /** @scpi ... */ block, which is the only source for the
-// generated SCPI manual (p0004-sw-003_scpi-manual-generator). These are comments: none of the
-// text reaches the firmware image. The registration code will sit next to each block when the
-// SCPI Service is built; until then this file holds the documentation for the agreed command
-// set ("The SCPI command tree", issue #15).
+// generated SCPI manual (p0004-sw-003_scpi-manual-generator). These are
+// comments: none of the text reaches the firmware image. The registration code
+// will sit next to each block when the SCPI Service is built; until then this
+// file holds the documentation for the agreed command set ("The SCPI command
+// tree", issue #15).
 #pragma once
 
-// ---------------------------------------------------------------- IEEE 488.2 common commands
+// ------------------------------------------------- IEEE 488.2 common commands
 
 /** @scpi
  * command: *IDN
@@ -116,7 +118,7 @@
  * group: IEEE 488.2 common commands
  */
 
-// ---------------------------------------------------------------- SYSTem
+// --------------------------------------------------------------------- SYSTem
 
 /** @scpi
  * command: SYSTem:ERRor:NEXT
@@ -161,7 +163,7 @@
  * group: System
  */
 
-// ---------------------------------------------------------------- STATus
+// --------------------------------------------------------------------- STATus
 
 /** @scpi
  * command: STATus:OPERation:EVENt
@@ -226,7 +228,7 @@
  * group: Status
  */
 
-// ---------------------------------------------------------------- generic settings (SYSTem:GTE)
+// ---------------------------------------------- generic settings (SYSTem:GTE)
 
 /** @scpi
  * command: SYSTem:GTE:CATalog

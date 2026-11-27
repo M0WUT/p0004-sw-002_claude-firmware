@@ -27,6 +27,16 @@ git config core.hooksPath .githooks
 
 Run the suite by hand with `hardware_tests/.venv/bin/pytest hardware_tests -v`. Bring-up spikes live in [bringup/](bringup/) and are never part of the suite.
 
+## Code style
+
+Enforced by `hardware_tests/test_harness.py` on every commit (see Testing):
+
+- **Python:** formatted with [black](https://black.readthedocs.io/), clean [flake8](https://flake8.pycqa.org/) (defaults, `max-line-length = 88`, see `.flake8`), and clean [pyright](https://github.com/microsoft/pyright) in `standard` mode, as Pylance's "Standard" type checking (`pyrightconfig.json`).
+- **C++:** the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html): formatted with clang-format (`.clang-format`, Google style) and a clean [cpplint](https://github.com/cpplint/cpplint) run. Third-party code (STM32duino's generic variant files, the FreeRTOS config copy, vendored TinyUSB) is left as delivered.
+- **Exception:** anything inside a `/** @scpi ... */` block is exempt from linting, because the SCPI manual generator reads it as written.
+
+The tools are pinned in `hardware_tests/requirements.txt`.
+
 ## SCPI manual
 
 **[SCPI command manual (PDF)](https://m0wut.github.io/p0004-sw-002_claude-firmware/scpi-manual.pdf)** ([HTML](https://m0wut.github.io/p0004-sw-002_claude-firmware/)) · [latest hardware test report](https://m0wut.github.io/p0004-sw-002_claude-firmware/report.html)

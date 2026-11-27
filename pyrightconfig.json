@@ -1,0 +1,39 @@
+{
+  "typeCheckingMode": "standard",
+  "include": [
+    "hardware_tests",
+    "bringup",
+    "scripts",
+    "tools",
+    ".githooks/pre-commit"
+  ],
+  "exclude": [
+    "**/.venv",
+    "**/.pio",
+    "**/node_modules",
+    "**/__pycache__",
+    "bringup/usb_host_msc/lib"
+  ],
+  "venvPath": "hardware_tests",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "hardware_tests",
+      "extraPaths": [
+        "hardware_tests"
+      ]
+    },
+    {
+      "root": "bringup",
+      "extraPaths": [
+        "bringup"
+      ]
+    },
+    {
+      "root": ".githooks",
+      "extraPaths": [
+        "hardware_tests"
+      ]
+    }
+  ]
+}

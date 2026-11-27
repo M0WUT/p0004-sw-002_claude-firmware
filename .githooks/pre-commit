@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""GTE pre-commit hook: run the hardware test suite and commit its report with the change.
+"""GTE pre-commit hook: run the hardware test suite and commit its report with the
+change.
 
 Enable once per clone:   git config core.hooksPath .githooks
 
 It never blocks a commit. Read hardware_tests/REPORT.md before pushing.
-- Only docs staged (nothing under the firmware or test paths): runs nothing, report untouched.
+- Only docs staged (nothing under the firmware or test paths): runs nothing, report
+untouched.
 - GTE_SKIP_TESTS=1: runs nothing, report says "not run: skipped by GTE_SKIP_TESTS".
 - No STLINK-V3 attached: runs nothing, report says "not run: no hardware attached".
-- Otherwise: pytest hardware_tests, writing REPORT.md and report.xml, then adds both to this commit.
+- Otherwise: pytest hardware_tests, writing REPORT.md and report.xml, then adds both to
+this commit.
 
 Test overrides (used by hardware_tests/test_harness.py):
   GTE_HOOK_HARDWARE=present|absent   skip the STLINK check
@@ -19,61 +22,104 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True).stdout.strip())
-TESTS = ROOT / 'hardware_tests'
+ROOT = Path(
+    subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True
+    ).stdout.strip()
+)
+TESTS = ROOT / "hardware_tests"
 sys.path.insert(0, str(TESTS))
 import gte_report  # noqa: E402
 
 # Paths whose changes can affect the firmware or the tests.
-RELEVANT = ('src/', 'include/', 'lib/', 'boards/', 'variants/', 'scripts/', 'examples/',
-            'hardware_tests/', '.githooks/', 'platformio.ini')
+RELEVANT = (
+    "src/",
+    "include/",
+    "lib/",
+    "boards/",
+    "variants/",
+    "scripts/",
+    "examples/",
+    "hardware_tests/",
+    ".githooks/",
+    "platformio.ini",
+)
 REPORT_FILES = [TESTS / gte_report.REPORT_NAME, TESTS / gte_report.XML_NAME]
 
 
 def add_reports():
     files = [str(p) for p in REPORT_FILES if p.exists()]
-    subprocess.run(['git', '-C', str(ROOT), 'add', '--', *files], check=False)
+    subprocess.run(["git", "-C", str(ROOT), "add", "--", *files], check=False)
 
 
 def main() -> int:
-    staged = subprocess.run(['git', '-C', str(ROOT), 'diff', '--cached', '--name-only'],
-                            capture_output=True, text=True).stdout.split()
-    staged = [f for f in staged if f not in (f'hardware_tests/{gte_report.REPORT_NAME}',
-                                             f'hardware_tests/{gte_report.XML_NAME}')]
+    staged = subprocess.run(
+        ["git", "-C", str(ROOT), "diff", "--cached", "--name-only"],
+        capture_output=True,
+        text=True,
+    ).stdout.split()
+    staged = [
+        f
+        for f in staged
+        if f
+        not in (
+            f"hardware_tests/{gte_report.REPORT_NAME}",
+            f"hardware_tests/{gte_report.XML_NAME}",
+        )
+    ]
     if not any(f.startswith(RELEVANT) for f in staged):
         return 0
 
-    if os.environ.get('GTE_SKIP_TESTS') == '1':
-        gte_report.write_not_run(TESTS, ROOT, 'skipped by GTE_SKIP_TESTS')
+    if os.environ.get("GTE_SKIP_TESTS") == "1":
+        gte_report.write_not_run(TESTS, ROOT, "skipped by GTE_SKIP_TESTS")
         add_reports()
-        print('pre-commit: hardware tests skipped (GTE_SKIP_TESTS=1)')
+        print("pre-commit: hardware tests skipped (GTE_SKIP_TESTS=1)")
         return 0
 
-    hw = os.environ.get('GTE_HOOK_HARDWARE')
-    present = (hw == 'present') if hw else bool(glob.glob('/dev/serial/by-id/usb-STMicroelectronics_STLINK-V3_*'))
+    hw = os.environ.get("GTE_HOOK_HARDWARE")
+    present = (
+        (hw == "present")
+        if hw
+        else bool(glob.glob("/dev/serial/by-id/usb-STMicroelectronics_STLINK-V3_*"))
+    )
     if not present:
-        gte_report.write_not_run(TESTS, ROOT, 'no hardware attached')
+        gte_report.write_not_run(TESTS, ROOT, "no hardware attached")
         add_reports()
-        print('pre-commit: no STLINK-V3 attached, hardware tests not run')
+        print("pre-commit: no STLINK-V3 attached, hardware tests not run")
         return 0
 
-    venv = TESTS / '.venv/bin/python'
-    python = os.environ.get('GTE_HOOK_PYTHON') or (str(venv) if venv.exists() else sys.executable)
-    print('pre-commit: running the hardware test suite (never blocks the commit)...')
-    subprocess.run([python, '-m', 'pytest', 'hardware_tests', '-p', 'no:cacheprovider', '-q',
-                    '--gte-report', str(TESTS), '--junitxml', str(TESTS / gte_report.XML_NAME)],
-                   cwd=ROOT)
+    venv = TESTS / ".venv/bin/python"
+    python = os.environ.get("GTE_HOOK_PYTHON") or (
+        str(venv) if venv.exists() else sys.executable
+    )
+    print("pre-commit: running the hardware test suite (never blocks the commit)...")
+    subprocess.run(
+        [
+            python,
+            "-m",
+            "pytest",
+            "hardware_tests",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "--gte-report",
+            str(TESTS),
+            "--junitxml",
+            str(TESTS / gte_report.XML_NAME),
+        ],
+        cwd=ROOT,
+    )
     add_reports()
     for line in (TESTS / gte_report.REPORT_NAME).read_text().splitlines():
-        if line.startswith('| Result |'):
-            print('pre-commit: ' + line.strip('| ').replace(' | ', ': '))
-    print('pre-commit: read hardware_tests/REPORT.md before pushing')
+        if line.startswith("| Result |"):
+            print("pre-commit: " + line.strip("| ").replace(" | ", ": "))
+    print("pre-commit: read hardware_tests/REPORT.md before pushing")
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         main()
     except Exception as e:  # never block a commit, even if the hook itself breaks
-        print(f'pre-commit: hook error ignored: {e}', file=sys.stderr)
+        print(f"pre-commit: hook error ignored: {e}", file=sys.stderr)
     sys.exit(0)

@@ -1,2 +1,7 @@
 pytest==8.3.3
 pyserial==3.5
+black==24.10.0
+flake8==7.1.1
+cpplint==1.6.1
+clang-format==19.1.7
+pyright==1.1.390

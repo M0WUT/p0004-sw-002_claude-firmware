@@ -1,0 +1,4 @@
+BasedOnStyle: Google
+# Never reflow the key: value lines of /** @scpi ... */ blocks: the SCPI manual
+# generator (p0004-sw-003) reads them line by line, and they may exceed 80 columns.
+CommentPragmas: "(@scpi|^ ?\\*? *[a-z]+:)"
