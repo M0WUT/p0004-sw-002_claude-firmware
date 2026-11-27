@@ -61,7 +61,7 @@ One of the four buttons below the LCD, whose meaning on the current screen is sh
 _Avoid_: hard key, arrow key, up/down/left/right button
 
 **Soft Key Legend**:
-The on-screen labels just above the Soft Keys, showing what each one does. It is always visible where input is required, and fades after 10 s without a press on information screens.
+The on-screen labels over the bottom of the page showing what each Soft Key does. It is always visible, except on the Application's own screens, where it hides after 5 s without a press.
 _Avoid_: button bar, hint bar, menu bar
 
 **Factory Reset**:
@@ -118,12 +118,16 @@ _Avoid_: crash, panic, hard fault
 One measured quantity (temperature, voltage, current, power or fan speed) from one physical source, owned by the Service that handles that quantity.
 _Avoid_: probe, channel, measurement point
 
-**Overtemperature**:
-The latched state, entered when any temperature Sensor passes its threshold, in which every fan runs at full speed and the Application Service shuts down its heat-generating hardware.
-_Avoid_: thermal fault, overheat, thermal shutdown
+**Warning temperature**:
+The threshold above which a temperature Sensor raises a Warning and every fan runs at full speed while the Instrument keeps running.
+_Avoid_: overtemperature, thermal warning
+
+**Critical temperature**:
+The threshold above which a temperature Sensor causes a Fatal Error, with every fan at full speed and the Application shut down.
+_Avoid_: overtemperature, thermal shutdown, overheat
 
 **Warning**:
-A problem the device can carry on through, shown to the user until they acknowledge it, or until the code that raised it clears it.
+A problem the device can carry on through: a condition that pops up briefly when raised and stays listed until the user or the raising code clears it.
 _Avoid_: alert, notification, alarm
 
 **Error Code**:
