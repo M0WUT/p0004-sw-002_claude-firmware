@@ -1,6 +1,7 @@
-"""Boot, clocks and scheduler on the LCD Board (Build: skeleton and test harness, issue #41)."""
+"""Boot and clocks on the LCD Board, running the Core firmware with no Application (issue #41).
+
+Scheduler timing is covered by test_framework.py::test_tick_periods."""
 import configparser
-import re
 import subprocess
 import time
 
@@ -54,33 +55,12 @@ def test_clocks(booted):
     assert int(kv['usbclk']) == 48_000_000
 
 
-def test_scheduler_timing(booted):
-    """A FreeRTOS task ticks every 100 ms; over 10 s it matches the host clock within 0.5 %."""
-    booted.wait_for(r'^GTE tick 1$', 2)
-    time.sleep(10.5)
-    lines = list(booted.lines)
-    boot_idx = max(i for i, (_, line) in enumerate(lines) if re.match(BOOT_RE, line))
-    ticks = [(t, int(m.group(1))) for t, line in lines[boot_idx:]
-             if (m := re.match(r'GTE tick (\d+)$', line))]
-    assert len(ticks) >= 100, f'only {len(ticks)} ticks in 10.5 s'
-    ns = [n for _, n in ticks]
-    assert ns == list(range(ns[0], ns[0] + len(ns))), 'tick numbers are not consecutive'
-    # Least-squares slope of host time against tick number = seconds per tick.
-    xs = ns
-    ys = [t for t, _ in ticks]
-    mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
-    slope = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sum((x - mx) ** 2 for x in xs)
-    assert abs(slope - 0.1) / 0.1 < 0.005, f'tick period {slope * 1000:.2f} ms, expected 100 ms ±0.5 %'
-
-
 def test_reset_reboots(flashed, uart):
-    """Two SWD resets in a row each give a fresh boot, with the tick count restarting from 0."""
+    """Two SWD resets in a row each give a fresh boot: boot line, reset reason, then CORE initialising."""
     for _ in range(2):
         uart.clear()
         reset_board()
         uart.wait_for(BOOT_RE, 5)
-        uart.wait_for(r'^GTE tick 0$', 2)
-        lines = [line for _, line in uart.lines]
-        boot_idx = max(i for i, line in enumerate(lines) if re.match(BOOT_RE, line))
-        first_tick = next(line for line in lines[boot_idx:] if line.startswith('GTE tick '))
-        assert first_tick == 'GTE tick 0', f'first tick after the boot line was "{first_tick}"'
+        uart.wait_for(r'^GTE reset reason=\S+$', 2)
+        uart.wait_for(r'\[CORE\]\s+\tINFO\t\tInitialising$', 3)
+        uart.wait_for(r'starting the scheduler$', 3)

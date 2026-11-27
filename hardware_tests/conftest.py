@@ -94,27 +94,76 @@ def build(env: str) -> Firmware:
                     int(ram.group(1)), int(ram.group(2)))
 
 
+_built: dict = {}
+_on_board: dict = {}
+
+
+def build_cached(env: str) -> Firmware:
+    if env not in _built:
+        _built[env] = build(env)
+    return _built[env]
+
+
+def put_on_board(request, fw: Firmware) -> Firmware:
+    """Program fw unless it's already the image on the board (or --no-flash); record the board serial."""
+    if not stlink_present():
+        pytest.fail('STLINK-V3 not found - is the LCD Board attached?')
+    if not request.config.getoption('--no-flash') and _on_board.get('env') != fw.env:
+        out = openocd(f'program {fw.elf} verify reset exit', timeout=180)
+        assert 'Verified OK' in out, f'flash failed:\n{out[-3000:]}'
+        time.sleep(1)  # the STLINK-V3 VCP can re-enumerate after programming
+        _on_board['env'] = fw.env
+    if 'board_serial' not in meta():
+        meta()['board_serial'] = read_uid()
+    return fw
+
+
 @pytest.fixture(scope='session')
 def firmware() -> Firmware:
-    """The Core firmware for this LCD Board, built once per session."""
-    fw = build(ENV)
+    """The Core firmware for this LCD Board (no Application), built once per session."""
+    fw = build_cached(ENV)
     meta()['firmware_version'] = fw.version
     meta().setdefault('extra', {})['Flash / RAM used'] = \
         f'{fw.flash_used:,} / {fw.flash_total:,} B, {fw.ram_used:,} / {fw.ram_total:,} B'
     return fw
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def flashed(request, firmware) -> Firmware:
-    """firmware, programmed onto the board once per session, and the board serial recorded."""
-    if not stlink_present():
-        pytest.fail('STLINK-V3 not found - is the LCD Board attached?')
-    if not request.config.getoption('--no-flash'):
-        out = openocd(f'program {firmware.elf} verify reset exit', timeout=180)
-        assert 'Verified OK' in out, f'flash failed:\n{out[-3000:]}'
-        time.sleep(1)  # the STLINK-V3 VCP can re-enumerate after programming
-    meta()['board_serial'] = read_uid()
-    return firmware
+    """The Core firmware, on the board."""
+    return put_on_board(request, firmware)
+
+
+TEST_ENV = ENV + '-test'
+SCENARIO_ADDR = 0x2001FFF0
+SCENARIOS = {'normal': 0, 'warnings': 1, 'nine_warnings': 2, 'fatal': 3, 'hang': 4, 'stack_overflow': 5,
+             'log_levels': 6}
+
+
+@pytest.fixture
+def app_firmware(request) -> Firmware:
+    """The test Application (hardware_tests/apps/test), on the board."""
+    return put_on_board(request, build_cached(TEST_ENV))
+
+
+@pytest.fixture
+def run_scenario(app_firmware, uart):
+    """run_scenario(name) -> UartCapture: reset the test Application into a scenario and wait for boot.
+
+    The scenario word is written over SWD while the core is held in reset; the test Application
+    reads and clears it in initialise()."""
+    def _run(name: str):
+        uart.clear()
+        value = (0x6765 << 16) | SCENARIOS[name]
+        openocd(f'init; reset halt; mww {SCENARIO_ADDR:#x} {value:#x}; resume; shutdown')
+        uart.wait_for(BOOT_RE, 5)
+        uart.wait_for(rf'Test scenario {SCENARIOS[name]}\b', 5)
+        uart.trim_before_last(BOOT_RE)
+        return uart
+    return _run
+
+
+ANSI = re.compile(r'\x1b\[[0-9;]*m')
 
 
 class UartCapture:
@@ -144,12 +193,12 @@ class UartCapture:
                 parts = (self._partial + d).split(b'\n')
                 self._partial = parts.pop()
                 for p in parts:
-                    self.lines.append((now, p.rstrip(b'\r').decode('ascii', 'replace')))
+                    self.lines.append((now, ANSI.sub('', p.rstrip(b'\r').decode('utf-8', 'replace'))))
 
     @property
     def text(self) -> str:
         with self._lock:
-            return self._raw.decode('ascii', 'replace').replace('\r\n', '\n')
+            return ANSI.sub('', self._raw.decode('utf-8', 'replace').replace('\r\n', '\n'))
 
     def clear(self):
         with self._lock:
@@ -166,6 +215,24 @@ class UartCapture:
                 return m
             time.sleep(0.05)
         pytest.fail(f'UART: /{regex}/ not seen within {timeout} s. Last output:\n{self.text[-2000:]}')
+
+    def trim_before_last(self, regex: str):
+        """Drop everything before the last line matching regex (e.g. stale output from before a reset,
+        still buffered in the STLINK VCP when the capture was cleared)."""
+        r = re.compile(regex)
+        with self._lock:
+            idx = max((i for i, (_, line) in enumerate(self.lines) if r.search(line)), default=None)
+            if idx is None:
+                return
+            keep = self.lines[idx:]
+            self.lines[:] = keep
+            self._raw = bytearray('\n'.join(line for _, line in keep).encode() + b'\n' + self._partial)
+
+    def lines_matching(self, regex: str) -> list[tuple[float, re.Match]]:
+        r = re.compile(regex)
+        with self._lock:
+            lines = list(self.lines)
+        return [(t, m) for t, line in lines if (m := r.search(line))]
 
     def close(self):
         self._stop = True
