@@ -1,6 +1,5 @@
 // The CORE Service. Its Log level also applies to the Helpers. Board reporting
-// (issue #45) and the boot-time EEPROM fatal/watchdog record (issue #43) are
-// added later.
+// (issue #45) is added later.
 #pragma once
 #include "gte/base_service.h"
 
@@ -12,6 +11,7 @@ class CoreService : public BaseService {
 
  protected:
   void Initialise() override {}
+  void Tick() override;  // a debug heartbeat (free heap, active Warnings)
 };
 
 }  // namespace gte

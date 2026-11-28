@@ -124,7 +124,10 @@ static bool OnStep(double x, double min, double step) {
 }
 
 bool ParseConfigValue(const ConfigParam &p, const char *text, ConfigValue *out,
-                      char *error, size_t error_size) {
+                      char *error, size_t error_size, ConfigError *kind) {
+  ConfigError ignored;
+  if (!kind) kind = &ignored;
+  *kind = ConfigError::kType;
   *out = ConfigValue{};
   out->type = p.type;
   if (!text) {
@@ -141,10 +144,12 @@ bool ParseConfigValue(const ConfigParam &p, const char *text, ConfigValue *out,
         return false;
       }
       if (n < p.min || n > p.max) {
+        *kind = ConfigError::kRange;
         snprintf(error, error_size, "Out of range %.0f to %.0f", p.min, p.max);
         return false;
       }
       if (!OnStep(static_cast<double>(n), p.min, p.step)) {
+        *kind = ConfigError::kStep;
         snprintf(error, error_size, "Must be a multiple of %.0f from %.0f",
                  p.step, p.min);
         return false;
@@ -161,11 +166,13 @@ bool ParseConfigValue(const ConfigParam &p, const char *text, ConfigValue *out,
         return false;
       }
       if (x < p.min || x > p.max) {
+        *kind = ConfigError::kRange;
         snprintf(error, error_size, "Out of range %.*f to %.*f", p.decimals,
                  p.min, p.decimals, p.max);
         return false;
       }
       if (!OnStep(x, p.min, p.step)) {
+        *kind = ConfigError::kStep;
         snprintf(error, error_size, "Must be a multiple of %g from %g", p.step,
                  p.min);
         return false;
@@ -189,6 +196,7 @@ bool ParseConfigValue(const ConfigParam &p, const char *text, ConfigValue *out,
     case ParamType::kText:
       if (strlen(text) + 1 > p.text_capacity ||
           strlen(text) >= sizeof(out->text)) {
+        *kind = ConfigError::kTooLong;
         snprintf(error, error_size, "Longer than %u characters",
                  static_cast<unsigned>(p.text_capacity - 1));
         return false;
@@ -201,6 +209,7 @@ bool ParseConfigValue(const ConfigParam &p, const char *text, ConfigValue *out,
           out->enum_index = i;
           return true;
         }
+      *kind = ConfigError::kNotAllowed;
       snprintf(error, error_size, "Not one of the allowed values");
       return false;
     case ParamType::kIpAddress: {

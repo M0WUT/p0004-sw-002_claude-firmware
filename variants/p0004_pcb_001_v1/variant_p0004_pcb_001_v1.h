@@ -58,3 +58,8 @@
 #define GTE_PIN_USB_HOST_VBUS_EN PD14
 #define GTE_PIN_USB_HOST_VBUS_FAULT PD15
 #define GTE_PIN_SD_DETECT PB8  // SDMMC1: PC8-PC11 D0-D3, PC12 CK, PD2 CMD
+// USB device port (to the Connected PC, via the IO Board connector): OTG_HS
+// with its internal full-speed PHY on PB14 (D-) / PB15 (D+), AF12, which is
+// TinyUSB rhport 1. The USB-A host port is OTG_FS on PA11/PA12 (rhport 0).
+#define GTE_USB_DEVICE_RHPORT 1
+#define GTE_USB_DEVICE_OTG_HS 1

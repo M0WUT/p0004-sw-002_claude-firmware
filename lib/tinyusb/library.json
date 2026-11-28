@@ -1,0 +1,20 @@
+{
+  "name": "tinyusb",
+  "version": "0.21.0",
+  "description": "TinyUSB 0.21.0 (hathach/tinyusb tag 0.21.0, dae3f9a), vendored as delivered: core, classes and the Synopsys dwc2 port only. Configured by include/tusb_config.h.",
+  "build": {
+    "srcDir": "src",
+    "includeDir": "src",
+    "srcFilter": [
+      "+<*.c>",
+      "+<common/>",
+      "+<device/>",
+      "+<host/>",
+      "+<class/>",
+      "+<portable/synopsys/dwc2/>"
+    ]
+  },
+  "dependencies": {
+    "stm32duino/STM32duino FreeRTOS": "10.3.2"
+  }
+}

@@ -94,14 +94,28 @@ inline ConfigParam *Secret(ConfigParam *p) {
   return p;
 }
 
+// Why a value was refused, for interfaces that report errors by number (SCPI).
+enum class ConfigError : uint8_t {
+  kNone,
+  kUnknown,     // no such parameter
+  kType,        // not a value of the parameter's type
+  kRange,       // outside min-max
+  kStep,        // not on the step
+  kTooLong,     // text longer than its capacity
+  kNotAllowed,  // not one of an enumeration's names
+  kRefused,     // the Service's own rule (validate_config_field)
+};
+
 struct ConfigResult {
   bool ok = false;
+  ConfigError error = ConfigError::kNone;
   bool restart_required = false;
   char message[96] = {};
 };
 
 bool ParseConfigValue(const ConfigParam &p, const char *text, ConfigValue *out,
-                      char *error, size_t error_size);
+                      char *error, size_t error_size,
+                      ConfigError *kind = nullptr);
 void WriteConfigValue(const ConfigParam &p, const ConfigValue &v);
 
 }  // namespace gte

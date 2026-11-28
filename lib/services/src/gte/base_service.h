@@ -20,6 +20,8 @@
 
 namespace gte {
 
+class ScpiRegistry;
+
 // A Service's stored config: its struct (its values on construction are the
 // defaults) and the struct's version. Bump the version, and add a
 // migrate_config step, on every change once released.
@@ -56,6 +58,16 @@ class BaseService {
   // Restore every Config Parameter (and the Log level) to its default, and
   // save.
   void ResetToDefaults();
+  // A Config Parameter's built-in default, as text (Format()); false if there
+  // is no such parameter.
+  bool DefaultText(const char *id, char *buf, size_t size);
+  // Its current value as text (Format(): secrets unmasked), read under the
+  // lock; false if there is no such parameter.
+  bool CurrentText(const char *id, char *buf, size_t size);
+
+  // Register this Service's SCPI commands (once, at startup, after every
+  // Service is initialised). Document each in an @scpi doc comment.
+  virtual void RegisterScpiCommands(ScpiRegistry *registry) { (void)registry; }
 
   // For ServiceHelper.
   void CaptureDefaults();

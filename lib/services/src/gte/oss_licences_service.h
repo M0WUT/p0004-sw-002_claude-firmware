@@ -33,6 +33,7 @@ class OssLicencesService : public BaseService {
   char cmsis_device_[48] = {};
   char cmsis_core_[32] = {};
   char freertos_[32] = {};
+  char tinyusb_[24] = {};
   char newlib_[32] = {};
   char gcc_[48] = {};
 };

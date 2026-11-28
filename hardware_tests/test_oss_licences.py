@@ -107,6 +107,19 @@ def freertos_version() -> str:
     return m.group(1)
 
 
+def tinyusb_version() -> str:
+    return json.loads(read(REPO / "lib/tinyusb/library.json"))["version"]
+
+
+def vrekrer_version() -> str:
+    props = next(
+        (REPO / ".pio/libdeps").glob("*/Vrekrer SCPI parser/library.properties")
+    )
+    m = re.search(r"^version=(\S+)$", read(props), re.M)
+    assert m, "Vrekrer version not found"
+    return m.group(1)
+
+
 def newlib_version() -> str:
     h = PACKAGES / "toolchain-gccarmnoneeabi/arm-none-eabi/include/_newlib_version.h"
     m = re.search(r'_NEWLIB_VERSION "([\d.]+)"', read(h))
@@ -134,6 +147,8 @@ def expected_rows(version: str) -> dict[str, tuple[str, str]]:
         "cmsisCore": (f"Arm CMSIS-Core {cmsis_core_version()}", APACHE),
         "freertos": (f"FreeRTOS kernel {freertos_version()}", MIT),
         "freertosHeap": ("FreeRTOS newlib heap wrapper (Dave Nadler)", NADLER_HEAP),
+        "tinyusb": (f"TinyUSB {tinyusb_version()}", MIT),
+        "vrekrerScpi": (f"Vrekrer SCPI parser {vrekrer_version()} (d5354a0)", MIT),
         "newlib": (f"newlib-nano {newlib_version()}", NEWLIB),
         "gccRuntime": (f"GCC runtime and libstdc++ {gcc_version()}", GCC),
     }
@@ -149,6 +164,8 @@ BUILD_PARTS = {
     "Wire": {"wire"},
     # the kernel, and the newlib malloc wrapper heap.c pulls in
     "STM32duino FreeRTOS": {"freertos", "freertosHeap"},
+    "tinyusb": {"tinyusb"},
+    "Vrekrer SCPI parser": {"vrekrerScpi"},
     # Ours (MIT, the firmware row)
     "src": {"firmware"},
     "drivers": {"firmware"},

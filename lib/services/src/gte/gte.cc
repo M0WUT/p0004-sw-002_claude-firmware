@@ -14,9 +14,11 @@
 #include "gte/i2c_bus.h"
 #include "gte/logging_helper.h"
 #include "gte/oss_licences_service.h"
+#include "gte/scpi_service.h"
 #include "gte/service_helper.h"
 #include "gte/soft_keys.h"
 #include "gte/time_helper.h"
+#include "gte/usb_device_service.h"
 #include "gte/watchdog.h"
 
 namespace gte {
@@ -30,6 +32,9 @@ static OssLicencesService g_oss_licences;
 static I2CBus g_i2c(GTE_PIN_I2C_INT_SDA, GTE_PIN_I2C_INT_SCL);
 static ConfigStorage g_storage;
 static SoftKeys g_keys;
+static UsbDeviceService g_usb_device;
+static ScpiService g_scpi;
+static ApplicationService *g_app = nullptr;
 
 TimeHelper &time() { return g_time; }
 LoggingHelper &log() { return g_log; }
@@ -37,6 +42,47 @@ ServiceHelper &services() { return g_services; }
 Watchdog &watchdog() { return g_watchdog; }
 ConfigStorage &storage() { return g_storage; }
 SoftKeys &keys() { return g_keys; }
+UsbDeviceService &usb_device() { return g_usb_device; }
+ScpiService &scpi() { return g_scpi; }
+ApplicationService *application() { return g_app; }
+
+const char *InstrumentName() {
+  return g_app ? g_app->instrument_name() : "GTE Core";
+}
+
+const char *InstrumentVersion() {
+  return g_app ? g_app->instrument_version() : VERSION_STRING;
+}
+
+void UniqueIdString(char *buf, size_t size) {
+  const uint8_t *uid = reinterpret_cast<const uint8_t *>(UID_BASE);
+  static const char kHex[] = "0123456789ABCDEF";
+  size_t n = 0;
+  for (size_t i = 0; i < 12 && n + 2 < size; i++) {
+    buf[n++] = kHex[uid[i] >> 4];
+    buf[n++] = kHex[uid[i] & 0xF];
+  }
+  if (size) buf[n < size ? n : size - 1] = 0;
+}
+
+void SetOperationCondition(uint16_t mask, bool on) {
+  g_scpi.status().SetOperCondition(mask, on);
+}
+
+void Restart(const char *source, const char *why) {
+  g_log.Log(source, LogLevel::kInfo, 0, why);
+  Serial.flush();
+  delay(20);
+  NVIC_SystemReset();
+  for (;;) {
+  }
+}
+
+void FactoryReset(const char *source) {
+  g_storage.Format();
+  g_storage.ClearRecord();
+  Restart(source, "Factory Reset done; restarting");
+}
 
 void PromptReinitialise(const char *source, const char *message) {
   uint32_t last = 0;
@@ -69,12 +115,7 @@ static void CheckFactoryReset() {
               "Factory Reset cancelled (keys released)");
     return;
   }
-  g_storage.Format();
-  g_storage.ClearRecord();
-  g_log.Log("CORE", LogLevel::kInfo, 0, "Factory Reset done; restarting");
-  Serial.flush();
-  delay(20);
-  NVIC_SystemReset();
+  FactoryReset("CORE");
 }
 
 static void CheckTable() {
@@ -200,12 +241,15 @@ void Start() {
   ReportLastReset();
 
   g_services.RegisterService(&g_core);
+  g_services.RegisterService(&g_usb_device);
+  g_services.RegisterService(&g_scpi);
   g_services.RegisterService(&g_oss_licences);
   ServiceList extra = GteExtraServices();
   for (size_t i = 0; i < extra.count; i++)
     g_services.RegisterService(extra.items[i]);
   ApplicationService *app = GteApplication();
   g_oss_licences.SetApplication(app);
+  g_app = app;
   if (app) {
     g_services.RegisterService(app);
     char msg[80];
@@ -222,6 +266,7 @@ void Start() {
     HelperLog("ServiceHelper", LogLevel::kInfo,
               "Instrument Board accepted by the Application");
   }
+  g_scpi.RegisterServiceCommands();
   g_keys.StartTask();
   g_services.Start();
 }

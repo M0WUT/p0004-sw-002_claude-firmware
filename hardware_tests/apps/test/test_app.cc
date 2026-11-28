@@ -3,6 +3,10 @@
 // writing kScenarioAddr over SWD while the core is held in reset (DTCM is
 // unused by the linker and untouched by startup code). Issues #42 and #43.
 //
+// Over SCPI (issue #44) it is "GTE Test" version 1.0-test, with a small TEST
+// command subtree. Its @scpi blocks are checked by test_scpi_docs.py and kept
+// out of the published manual (hardware_tests/.scpi-ignore).
+//
 // TEST_CONFIG_VERSION (1 by default) selects the config structs, so the
 // migration tests can build version 2 (with 1->2 steps) and version 3 (with
 // only the 2->3 step for APPLICATION_TEST).
@@ -16,6 +20,8 @@
 #include "gte/config_storage.h"
 #include "gte/gte.h"
 #include "gte/logging_helper.h"
+#include "gte/scpi.h"
+#include "gte/scpi_service.h"
 #include "gte/service_helper.h"
 
 using gte::ApplicationService;
@@ -60,7 +66,9 @@ enum Scenario : uint16_t {
   kSetValues = 7,
   kEepromFull = 8,
   kNoApp = 9,
-  // 10-19 are left for the SCPI scenarios (issue #44)
+  kScpi = 10,  // quiet: nothing happens on its own; kept across restarts
+  kScpiTableFull = 11,
+  kScpiCollision = 12,
   kPrintStatus = 20  // every Service's Status Values (issue #55)
 };
 
@@ -123,9 +131,13 @@ static uint16_t PeekScenario() {
 
 static uint16_t TakeScenario() {
   uint32_t v = *kScenarioAddr;
-  *kScenarioAddr =
-      0;  // one-shot: a later reset (e.g. by the watchdog) runs kNormal
-  return (v >> 16) == 0x6765 ? static_cast<uint16_t>(v & 0xFFFF) : kNormal;
+  const uint16_t s =
+      (v >> 16) == 0x6765 ? static_cast<uint16_t>(v & 0xFFFF) : kNormal;
+  // One-shot: a later reset (e.g. by the watchdog) runs kNormal. kScpi stays,
+  // so SYST:REB and watchdog restarts come back quiet too; every test reset
+  // writes its own scenario.
+  if (s != kScpi) *kScenarioAddr = 0;
+  return s;
 }
 
 // TEST_AUX config: version 2 adds a 40-byte tag, so its block grows and every
@@ -228,6 +240,7 @@ struct AppConfigV1 {
   uint8_t mode = 1;
   char password[17] = "hunter2";
   int32_t channels = 4;
+  uint8_t address[4] = {192, 168, 1, 10};
 };
 struct AppConfigV2 : AppConfigV1 {
   int32_t offset = 7;
@@ -254,7 +267,13 @@ class TestApp : public ApplicationService {
     return true;
   }
 
+  const char *instrument_name() const override { return "GTE Test"; }
+  const char *instrument_version() const override { return "1.0-test"; }
+
+  void RegisterScpiCommands(gte::ScpiRegistry *r) override;
+
  protected:
+  void OnRemoteReset() override { LogInfo("Reset hook called (*RST)"); }
   void Initialise() override {
     g_scenario = TakeScenario();
     LogInfof("Test scenario %u", g_scenario);
@@ -269,6 +288,7 @@ class TestApp : public ApplicationService {
     l->Enumeration("mode", "Mode", &c_.mode, modes, 3);
     Secret(l->Text("password", "Password", c_.password, sizeof(c_.password)));
     ResetMode(l->Integer("channels", "Channels", &c_.channels, 1, 8, 1));
+    l->Ip("address", "Address", c_.address);
 #if TEST_CONFIG_VERSION >= 2
     l->Integer("offset", "Offset", &c_.offset, 0, 1000, 1);
 #endif
@@ -440,6 +460,150 @@ class TestApp : public ApplicationService {
   AppConfig c_;
   uint32_t n_ = 0;
 };
+
+// ---------------------------------------------------------- SCPI (TEST)
+
+namespace {
+
+int32_t g_value_a = 0, g_value_b = 0;  // two contexts for one handler
+constexpr int kChannels = 4;
+int32_t g_channel_value[kChannels] = {};
+
+void ValueSet(gte::ScpiCall *c) {
+  int32_t v;
+  if (c->ExpectParams(1) && c->IntegerParam(0, -1000000, 1000000, &v))
+    *static_cast<int32_t *>(c->context()) = v;
+}
+
+void ValueQuery(gte::ScpiCall *c) {
+  if (c->ExpectParams(0))
+    c->out()->print(*static_cast<int32_t *>(c->context()));
+}
+
+int32_t *Channel(gte::ScpiCall *c) {
+  const int n = c->Suffix(1);
+  if (n < 1 || n > kChannels) {
+    c->Error(gte::scpi_errors::kHeaderSuffixOutOfRange, "Channels 1-4");
+    return nullptr;
+  }
+  return &g_channel_value[n - 1];
+}
+
+void ChannelSet(gte::ScpiCall *c) {
+  int32_t v;
+  int32_t *slot = Channel(c);
+  if (slot && c->ExpectParams(1) && c->IntegerParam(0, -1000000, 1000000, &v))
+    *slot = v;
+}
+
+void ChannelQuery(gte::ScpiCall *c) {
+  int32_t *slot = Channel(c);
+  if (slot && c->ExpectParams(0)) c->out()->print(*slot);
+}
+
+void OperationSet(gte::ScpiCall *c) {
+  int32_t on;
+  if (c->ExpectParams(1) && c->IntegerParam(0, 0, 1, &on))
+    gte::SetOperationCondition(1 << 9, on != 0);
+}
+
+void Nothing(gte::ScpiCall *c) { (void)c; }
+
+}  // namespace
+
+void TestApp::RegisterScpiCommands(gte::ScpiRegistry *r) {
+  /** @scpi
+   * command: TEST:A:VALue
+   * form: set
+   * syntax: TEST:A:VALue <n>
+   * brief: Set test value A (one handler, context A).
+   * param: n | integer | Value
+   * group: Test Application
+   */
+  r->Register("TEST:A:VALue", ValueSet, &g_value_a);
+
+  /** @scpi
+   * command: TEST:A:VALue
+   * form: query
+   * brief: Read test value A.
+   * response: Integer
+   * group: Test Application
+   */
+  r->Register("TEST:A:VALue?", ValueQuery, &g_value_a);
+
+  /** @scpi
+   * command: TEST:B:VALue
+   * form: set
+   * syntax: TEST:B:VALue <n>
+   * brief: Set test value B (the same handler as A, context B).
+   * param: n | integer | Value
+   * group: Test Application
+   */
+  r->Register("TEST:B:VALue", ValueSet, &g_value_b);
+
+  /** @scpi
+   * command: TEST:B:VALue
+   * form: query
+   * brief: Read test value B.
+   * response: Integer
+   * group: Test Application
+   */
+  r->Register("TEST:B:VALue?", ValueQuery, &g_value_b);
+
+  /** @scpi
+   * command: TEST:CHANnel#:VALue
+   * form: set
+   * syntax: TEST:CHANnel#:VALue <n>
+   * brief: Set a channel's test value (channels 1-4, as a numeric suffix).
+   * param: n | integer | Value
+   * errors: -114
+   * group: Test Application
+   */
+  r->Register("TEST:CHANnel#:VALue", ChannelSet);
+
+  /** @scpi
+   * command: TEST:CHANnel#:VALue
+   * form: query
+   * brief: Read a channel's test value.
+   * response: Integer
+   * errors: -114
+   * group: Test Application
+   */
+  r->Register("TEST:CHANnel#:VALue?", ChannelQuery);
+
+  /** @scpi
+   * command: TEST:OPERation
+   * form: set
+   * syntax: TEST:OPERation <0|1>
+   * brief: Set or clear the test Application's OPERation bit (bit 9).
+   * param: state | integer 0-1 | 1 sets the bit
+   * group: Test Application
+   */
+  r->Register("TEST:OPERation", OperationSet);
+
+  if (g_scenario == kScpiTableFull) {
+    // Far more than the table holds: the first that doesn't fit is a Fatal
+    // Error naming it.
+    for (int i = 0; i < 400; i++) {
+      char header[32];
+      snprintf(header, sizeof(header), "TFULl:N%d", i);
+      r->Register(header, Nothing);
+    }
+  }
+  if (g_scenario == kScpiCollision) {
+    // Vrekrer's hash is h = h * 37 + token index per keyword, with
+    // h = h * 37 - 1 for a query. With A and B two new tokens (indices n and
+    // n + 1), the query B? and the set A:<token 36> both hash to
+    // 7 * 37^2 + 37n + 36.
+    r->Register("TCOLlisionA", Nothing);
+    r->Register("TCOLlisionB?", Nothing);
+    char header[64];
+    snprintf(header, sizeof(header), "TCOLlisionA:%s",
+             gte::scpi().parser().token(36));
+    LogInfof("Registering %s", header);
+    r->Register(header, Nothing);
+  }
+}
 
 static TestAux g_aux;
 static TestApp g_app;

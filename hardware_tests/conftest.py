@@ -218,6 +218,9 @@ SCENARIOS = {
     "set_values": 7,
     "eeprom_full": 8,
     "no_app": 9,
+    "scpi": 10,
+    "scpi_table_full": 11,
+    "scpi_collision": 12,
     "print_status": 20,  # every Service's Status Values (#55)
 }
 
@@ -432,3 +435,208 @@ def booted(flashed, uart):
     uart.wait_for(BOOT_RE, 5)
     answer_blank_prompt(uart)
     return uart
+
+
+# ------------------------------------------------------------- USB device and SCPI
+# From Build: USB Device CDC and SCPI (issue #44) on, tests drive the firmware over
+# SCPI on the USB device port (IO Board connector D+/D-/GND to this PC).
+
+USB_VID, USB_PID = 0xCAFE, 0x4004  # until the pid.codes PID is granted (#38, #39)
+ENUM_TIMEOUT = 15  # s from reset until the CDC port can be opened
+CORE_PRODUCT = "GTE Core"  # Product string and *IDN? name with no Application
+TEST_PRODUCT = "GTE Test"  # the test Application's Instrument name
+TEST_VERSION = "1.0-test"  # the test Application's Instrument version
+DIAG_KEY = "GTE-ENGINEERING"
+CONFIGURED_RE = r"\[USB_DEVICE\].*Configured by the Connected PC"
+SESSION_RE = r"\[SCPI\].*Session opened: USB"
+
+
+def cdc_path(product: str, uid: str) -> str:
+    """udev's by-id name for the CDC port: every string is checked by finding it."""
+    return f"/dev/serial/by-id/usb-M0WUT_{product.replace(' ', '_')}_{uid}-if00"
+
+
+def board_uid() -> str:
+    if "board_serial" not in meta():
+        meta()["board_serial"] = read_uid()
+    return meta()["board_serial"]
+
+
+class ScpiError(AssertionError):
+    pass
+
+
+class Scpi:
+    """One SCPI session on the CDC port: LF termination, 2 s timeout, DTR high."""
+
+    def __init__(self, path: str, dtr: bool = True):
+        end = time.time() + 5
+        while True:
+            try:
+                self.port = serial.Serial()
+                self.port.port = path
+                self.port.timeout = 2
+                self.port.dtr = dtr
+                self.port.open()
+                break
+            except serial.SerialException:
+                if time.time() > end:
+                    raise
+                time.sleep(0.2)
+        self.path = path
+        self.firmware: Firmware | None = None  # what scpi_board put on the board
+        self.check_queue_at_end = True
+        time.sleep(0.1)
+        self.port.reset_input_buffer()
+
+    def write(self, line: str, end: str = "\n"):
+        self.port.write((line + end).encode())
+        self.port.flush()
+
+    def read_line(self, timeout: float = 2) -> str:
+        self.port.timeout = timeout
+        raw = self.port.read_until(b"\n")
+        if not raw.endswith(b"\n"):
+            raise ScpiError(f"no complete reply within {timeout} s (got {raw!r})")
+        return raw[:-1].decode()
+
+    def query(self, line: str, timeout: float = 2) -> str:
+        self.write(line)
+        return self.read_line(timeout)
+
+    def no_reply(self, wait: float = 0.5) -> bool:
+        """True if nothing at all arrives within `wait` s."""
+        self.port.timeout = wait
+        return self.port.read(1) == b""
+
+    def error(self) -> tuple[int, str]:
+        reply = self.query("SYST:ERR?")
+        m = re.fullmatch(r'(-?\d+),"(.*)"', reply)
+        assert m, f"SYST:ERR? reply malformed: {reply!r}"
+        return int(m.group(1)), m.group(2)
+
+    def errors(self) -> list[tuple[int, str]]:
+        """Drain the error queue (oldest first)."""
+        out = []
+        for _ in range(64):
+            e = self.error()
+            if e[0] == 0:
+                return out
+            out.append(e)
+        raise ScpiError(f"error queue never empties: {out[:5]}")
+
+    def expect_error(self, code: int):
+        errs = self.errors()
+        assert [e[0] for e in errs] == [code], f"expected only {code}, got {errs}"
+        return errs[0]
+
+    def ok(self, line: str):
+        """Send a command that must not add an error."""
+        self.write(line)
+        assert self.errors() == [], f"{line!r} added errors"
+
+    def close(self):
+        try:
+            self.port.close()
+        except serial.SerialException:
+            pass
+
+
+def wait_gone(path: str, timeout: float = 5):
+    end = time.time() + timeout
+    while Path(path).exists() and time.time() < end:
+        time.sleep(0.05)
+
+
+def open_scpi(uart, product: str, dtr: bool = True) -> Scpi:
+    """Wait until the firmware reports enumeration, then open its CDC port."""
+    uart.wait_for(CONFIGURED_RE, ENUM_TIMEOUT)
+    path = cdc_path(product, board_uid())
+    end = time.time() + ENUM_TIMEOUT
+    while not Path(path).exists():
+        if time.time() > end:
+            found = glob.glob("/dev/serial/by-id/*")
+            pytest.fail(f"{path} did not appear; by-id has {found}")
+        time.sleep(0.1)
+    return Scpi(path, dtr=dtr)
+
+
+@pytest.fixture
+def scpi_board(request, uart):
+    """start(env=TEST_RAM_ENV, scenario="scpi", unlock=False, config="fresh") -> Scpi
+
+    Puts the firmware on the board, resets it (into a test Application scenario,
+    unless env is the Core firmware), waits for USB and opens the SCPI session.
+    Each session starts with *CLS. At the end the error queue must be empty, unless
+    the test sets check_queue_at_end = False (e.g. after a restart)."""
+    sessions: list[Scpi] = []
+
+    def _start(
+        env: str = TEST_RAM_ENV,
+        scenario: str | None = "scpi",
+        unlock: bool = False,
+        config: str | None = "fresh",
+    ) -> Scpi:
+        fw = put_on_board(request, build_cached(env))
+        product = CORE_PRODUCT if env == ENV else TEST_PRODUCT
+        old = cdc_path(product, board_uid())
+        uart.clear()
+        if env == ENV:
+            reset_board()
+        else:
+            reset_with(SCENARIOS[scenario or "normal"], config_action=config)
+        uart.wait_for(BOOT_RE, 5)
+        answer_blank_prompt(uart)
+        uart.trim_before_last(BOOT_RE)
+        wait_gone(old)
+        s = open_scpi(uart, product)
+        s.firmware = fw
+        sessions.append(s)
+        s.write("*CLS")
+        if unlock:
+            s.ok(f'DIAG:UNL "{DIAG_KEY}"')
+        return s
+
+    yield _start
+    for s in sessions:
+        if not s.port.is_open:
+            continue
+        if s.check_queue_at_end:
+            try:
+                left = s.errors()
+            except (ScpiError, serial.SerialException) as e:
+                left = [(0, f"queue not readable: {e}")]
+            s.close()
+            assert left == [], f"error queue left holding {left}"
+        else:
+            s.close()
+
+
+@pytest.fixture
+def scpi(scpi_board) -> Scpi:
+    """The test Application (DEBUG_EEPROM) over SCPI, in its quiet "scpi" scenario."""
+    return scpi_board()
+
+
+@pytest.fixture
+def scpi_diag(scpi_board) -> Scpi:
+    """As scpi, with the DIAG engineering commands unlocked."""
+    return scpi_board(unlock=True)
+
+
+@pytest.fixture
+def core_scpi(scpi_board) -> Scpi:
+    """The Core firmware (no Application) over SCPI."""
+    return scpi_board(env=ENV)
+
+
+def reopen(uart, old: Scpi, product: str = TEST_PRODUCT) -> Scpi:
+    """After the firmware restarts itself: wait for the new boot, then reopen SCPI.
+    Clear the UART capture before triggering the restart."""
+    old.check_queue_at_end = False
+    uart.wait_for(BOOT_RE, ENUM_TIMEOUT)  # before closing: DTR low ends the session
+    old.close()
+    answer_blank_prompt(uart)
+    uart.trim_before_last(BOOT_RE)
+    wait_gone(old.path)
+    return open_scpi(uart, product)

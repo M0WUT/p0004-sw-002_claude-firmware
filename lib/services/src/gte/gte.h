@@ -6,6 +6,7 @@
 // neither, Core runs on its own.
 #pragma once
 #include <cstddef>
+#include <cstdint>
 
 #include "gte/application_service.h"
 #include "gte/log_level.h"
@@ -18,6 +19,8 @@ class ServiceHelper;
 class Watchdog;
 class ConfigStorage;
 class SoftKeys;
+class UsbDeviceService;
+class ScpiService;
 
 TimeHelper &time();
 LoggingHelper &log();
@@ -25,6 +28,28 @@ ServiceHelper &services();
 Watchdog &watchdog();
 ConfigStorage &storage();
 SoftKeys &keys();
+UsbDeviceService &usb_device();
+ScpiService &scpi();
+
+// The Application Service, or nullptr when Core runs on its own.
+ApplicationService *application();
+// The Instrument's name and version: the Application's, or "GTE Core" and the
+// Core version with no Application.
+const char *InstrumentName();
+const char *InstrumentVersion();
+// The STM32 96-bit unique ID as 24 upper-case hex digits, bytes in memory
+// order: the USB serial number and *IDN?'s third field.
+void UniqueIdString(char *buf, size_t size);
+
+// Set or clear bits of the SCPI OPERation condition register (issue #15): bit
+// 8 is Application Logging; bits 9-12 belong to the Application Service.
+void SetOperationCondition(uint16_t mask, bool on);
+
+// Restart now (reset reason: software), logging why.
+[[noreturn]] void Restart(const char *source, const char *why);
+// Factory Reset: rebuild config storage from scratch, then restart. The MAC is
+// not touched.
+[[noreturn]] void FactoryReset(const char *source);
 
 // Stop the boot until Soft Key 4 is held for 3 s, repeating `message` on the
 // log every 2 s (issue #12). The LCD shows it too once the Display Service

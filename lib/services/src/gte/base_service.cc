@@ -45,10 +45,13 @@ ConfigResult BaseService::SetConfig(const char *id, const char *text) {
   const ConfigParam *p = list.Find(id);
   ConfigValue v;
   if (!p) {
+    r.error = ConfigError::kUnknown;
     snprintf(r.message, sizeof(r.message), "Unknown parameter %s", id);
-  } else if (!ParseConfigValue(*p, text, &v, r.message, sizeof(r.message))) {
-    // message set by the parser
+  } else if (!ParseConfigValue(*p, text, &v, r.message, sizeof(r.message),
+                               &r.error)) {
+    // message and error set by the parser
   } else if (!ValidateConfigField(id, v, r.message, sizeof(r.message))) {
+    r.error = ConfigError::kRefused;
     if (!r.message[0])
       snprintf(r.message, sizeof(r.message), "Refused by %s", name());
   } else {
@@ -120,6 +123,38 @@ void BaseService::ResetToDefaults() {
   SaveConfig();
   Unlock();
   LogInfo("Config reset to defaults");
+}
+
+bool BaseService::DefaultText(const char *id, char *buf, size_t size) {
+  Lock();
+  ConfigList list;
+  Config(&list);
+  const ConfigParam *p = list.Find(id);
+  bool found = p != nullptr;
+  if (found) {
+    ConfigParam d = *p;
+    ConfigBlock b = GetConfigBlock();
+    const uint8_t *start = static_cast<const uint8_t *>(b.data);
+    const uint8_t *at = static_cast<const uint8_t *>(p->value);
+    static uint8_t default_log_level = static_cast<uint8_t>(LogLevel::kInfo);
+    if (defaults_ && at >= start && at < start + b.size)
+      d.value = defaults_ + (at - start);
+    else
+      d.value = &default_log_level;  // the only parameter outside the struct
+    d.Format(buf, size);
+  }
+  Unlock();
+  return found;
+}
+
+bool BaseService::CurrentText(const char *id, char *buf, size_t size) {
+  Lock();
+  ConfigList list;
+  Config(&list);
+  const ConfigParam *p = list.Find(id);
+  if (p) p->Format(buf, size);
+  Unlock();
+  return p != nullptr;
 }
 
 void BaseService::LoadConfig() {

@@ -5,11 +5,13 @@ dummy
 suite (one pass, one fail, one skip, one xfail), so no board is needed.
 """
 
+import fcntl
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -78,7 +80,12 @@ def repo(tmp_path) -> Path:
     return r
 
 
+# The hook's tests use their own lock file, never the real bench lock.
+HARNESS_LOCK = Path(tempfile.gettempdir()) / "gte-bench-harness.lock"
+
+
 def hook_env(**extra) -> dict:
+    extra.setdefault("GTE_BENCH_LOCK", str(HARNESS_LOCK))
     return clean_env(GTE_HOOK_PYTHON=sys.executable, **extra)
 
 
@@ -195,6 +202,26 @@ def test_hook_skip_env(repo):
         in (repo / "hardware_tests/REPORT.md").read_text()
     )
     assert "hardware_tests/REPORT.md" in committed_files(repo)
+
+
+def test_hook_waits_for_bench(repo, tmp_path):
+    """While another run holds the bench lock the hook waits, then gives up with
+    "not run: bench busy"; the commit still goes through."""
+    lock_path = tmp_path / "bench.lock"
+    with open(lock_path, "a") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        touch_test_file(repo)
+        env = hook_env(
+            GTE_HOOK_HARDWARE="present",
+            GTE_BENCH_LOCK=str(lock_path),
+            GTE_BENCH_WAIT_S="2",
+        )
+        r = commit(repo, "busy", env)
+    assert r.returncode == 0, r.stderr
+    assert (
+        "| Result | not run: bench busy |"
+        in (repo / "hardware_tests/REPORT.md").read_text()
+    )
 
 
 def test_spikes_not_collected():

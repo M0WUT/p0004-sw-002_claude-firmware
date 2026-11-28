@@ -89,6 +89,7 @@ void LoggingHelper::RaiseWarning(const char *source, const ErrorCode &code,
       Log(source, LogLevel::kWarning, code.code, code.message, supplementary);
       Log(source, LogLevel::kInfo, code.code,
           "Warning updated (already active)");
+      if (listener_) listener_(listener_context_, warnings_[i]);
       Unlock();
       return;
     }
@@ -107,6 +108,7 @@ void LoggingHelper::RaiseWarning(const char *source, const ErrorCode &code,
            supplementary ? supplementary : "");
   w.time_ms = time_->NowMs();
   UpdateLed();
+  if (listener_) listener_(listener_context_, w);
   Unlock();
 }
 

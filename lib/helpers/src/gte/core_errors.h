@@ -21,6 +21,10 @@ GTE_ERROR_CODE(kInstrumentBoardRejected, 104, kFatal,
                "Instrument Board rejected by the Application");
 GTE_ERROR_CODE(kRecoveredWatchdog, 105, kWarning,
                "Recovered from a watchdog reset");
+GTE_ERROR_CODE(kDiagTestWarning, 106, kWarning,
+               "Engineering test Warning (DIAG:WARNing)");
+GTE_ERROR_CODE(kDiagTestFatal, 107, kFatal,
+               "Engineering test Fatal Error (DIAG:FATal)");
 static_assert(CodeBelongsTo(kTooManyWarnings.code, ServiceId::kCore),
               "CORE codes are 101-199");
 

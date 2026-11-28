@@ -29,8 +29,15 @@ struct Warning {
   uint64_t time_ms;
 };
 
+// Told of every Warning raise (new or updated), e.g. so SCPI can queue it.
+using WarningListener = void (*)(void *context, const Warning &warning);
+
 class LoggingHelper {
  public:
+  void SetWarningListener(WarningListener listener, void *context) {
+    listener_ = listener;
+    listener_context_ = context;
+  }
   void Begin(TimeHelper *time);
   void Log(const char *source, LogLevel level, uint16_t code,
            const char *message, const char *supplementary = nullptr);
@@ -52,6 +59,8 @@ class LoggingHelper {
   void UpdateLed();
   TimeHelper *time_ = nullptr;
   void *mutex_ = nullptr;
+  WarningListener listener_ = nullptr;
+  void *listener_context_ = nullptr;
   Warning warnings_[kMaxWarnings];
   size_t count_ = 0;
 };

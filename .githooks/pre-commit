@@ -12,14 +12,23 @@ untouched.
 - Otherwise: pytest hardware_tests, writing REPORT.md and report.xml, then adds both to
 this commit.
 
+The bench (LCD Board, STLINK-V3, debug UART, USB device port) is shared between
+checkouts: the suite runs holding an exclusive lock on /tmp/gte-bench.lock, waiting up
+to 15 min for it (report: "not run: bench busy" if it never frees). Hand-run hardware
+commands take the same lock: flock -w 900 /tmp/gte-bench.lock <command>.
+
 Test overrides (used by hardware_tests/test_harness.py):
   GTE_HOOK_HARDWARE=present|absent   skip the STLINK check
   GTE_HOOK_PYTHON=<python>           interpreter that has pytest installed
+  GTE_BENCH_LOCK=<path>              lock file in place of /tmp/gte-bench.lock
+  GTE_BENCH_WAIT_S=<seconds>         how long to wait for it (default 900)
 """
+import fcntl
 import glob
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(
@@ -45,6 +54,24 @@ RELEVANT = (
     "platformio.ini",
 )
 REPORT_FILES = [TESTS / gte_report.REPORT_NAME, TESTS / gte_report.XML_NAME]
+# Overridable so the hook's own tests never touch the real bench lock.
+BENCH_LOCK = os.environ.get("GTE_BENCH_LOCK", "/tmp/gte-bench.lock")
+BENCH_WAIT_S = float(os.environ.get("GTE_BENCH_WAIT_S", "900"))
+
+
+def take_bench_lock():
+    """The open lock file once held, or None after BENCH_WAIT_S."""
+    f = open(BENCH_LOCK, "a")
+    end = time.time() + BENCH_WAIT_S
+    while True:
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return f
+        except BlockingIOError:
+            if time.time() > end:
+                f.close()
+                return None
+            time.sleep(1)
 
 
 def add_reports():
@@ -92,6 +119,13 @@ def main() -> int:
     python = os.environ.get("GTE_HOOK_PYTHON") or (
         str(venv) if venv.exists() else sys.executable
     )
+    print(f"pre-commit: waiting for the bench lock ({BENCH_LOCK})...")
+    lock = take_bench_lock()
+    if lock is None:
+        gte_report.write_not_run(TESTS, ROOT, "bench busy")
+        add_reports()
+        print("pre-commit: the bench stayed busy, hardware tests not run")
+        return 0
     print("pre-commit: running the hardware test suite (never blocks the commit)...")
     subprocess.run(
         [
@@ -109,6 +143,7 @@ def main() -> int:
         ],
         cwd=ROOT,
     )
+    lock.close()  # releases the flock
     add_reports()
     for line in (TESTS / gte_report.REPORT_NAME).read_text().splitlines():
         if line.startswith("| Result |"):

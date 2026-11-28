@@ -9,6 +9,7 @@
 #include <cstring>
 
 #include "generated/version.h"
+#include "tusb_option.h"  // NOLINT(build/include_subdir): TinyUSB names it so
 
 namespace gte {
 
@@ -66,6 +67,10 @@ void OssLicencesService::Initialise() {
   // tskKERNEL_VERSION_NUMBER is "V10.3.1"
   snprintf(freertos_, sizeof(freertos_), "FreeRTOS kernel %s",
            tskKERNEL_VERSION_NUMBER + 1);
+  snprintf(tinyusb_, sizeof(tinyusb_), "TinyUSB %u.%u.%u",
+           static_cast<unsigned>(TUSB_VERSION_MAJOR),
+           static_cast<unsigned>(TUSB_VERSION_MINOR),
+           static_cast<unsigned>(TUSB_VERSION_REVISION));
   snprintf(newlib_, sizeof(newlib_), "newlib-nano %s", _NEWLIB_VERSION);
   snprintf(gcc_, sizeof(gcc_), "GCC runtime and libstdc++ %d.%d.%d", __GNUC__,
            __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
@@ -83,6 +88,10 @@ void OssLicencesService::GetStatus(StatusList *list) {
   list->StaticText("freertos", freertos_, kMit);
   list->StaticText("freertosHeap", "FreeRTOS newlib heap wrapper (Dave Nadler)",
                    kNadlerHeap);
+  list->StaticText("tinyusb", tinyusb_, kMit);
+  // Pinned by commit in platformio.ini; its header's own version macro is
+  // stale.
+  list->StaticText("vrekrerScpi", "Vrekrer SCPI parser 0.6.1 (d5354a0)", kMit);
   list->StaticText("newlib", newlib_, kNewlib);
   list->StaticText("gccRuntime", gcc_, kGcc);
   if (app_) app_->Acknowledge(list);
